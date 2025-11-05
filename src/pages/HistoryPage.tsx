@@ -1,115 +1,137 @@
 // src/pages/HistoryPage.tsx
 import { useState, useEffect } from 'react';
+import { format } from 'date-fns';
+import { Trash2, AlertCircle } from 'lucide-react';
 
-interface AnalysisResult {
+interface HistoryItem {
   id: string;
-  text: string;
+  claim: string;
   verdict: 'bullshit' | 'mostly true' | 'neutral';
   score: number;
-  explanation: string;
   timestamp: number;
+  mode: 'voter' | 'professional';
 }
 
-type VerdictLevel = 'bullshit' | 'mostly true' | 'neutral';
-
 export default function HistoryPage() {
-  const [analyses, setAnalyses] = useState<AnalysisResult[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterVerdict, setFilterVerdict] = useState<VerdictLevel | 'all'>('all');
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  // Load from localStorage on mount
+  // Load history
   useEffect(() => {
-    const saved = localStorage.getItem('bullshit-history');
-    if (saved) {
-      setAnalyses(JSON.parse(saved));
+    const raw = localStorage.getItem('validator-history');
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          setHistory(parsed.sort((a, b) => b.timestamp - a.timestamp));
+        }
+      } catch (e) {
+        console.error('Failed to parse history:', e);
+      }
     }
   }, []);
 
-  // Save to localStorage whenever analyses change
-  useEffect(() => {
-    localStorage.setItem('bullshit-history', JSON.stringify(analyses));
-  }, [analyses]);
-
-  // Filter results
-  const filtered = analyses
-    .filter(a => filterVerdict === 'all' || a.verdict === filterVerdict)
-    .filter(a => a.text.toLowerCase().includes(searchQuery.toLowerCase()))
-    .sort((a, b) => b.timestamp - a.timestamp);
-
-  const clearHistory = () => {
-    if (confirm('Delete all history?')) {
-      setAnalyses([]);
-      localStorage.removeItem('bullshit-history');
-    }
+  // Delete all
+  const deleteAll = () => {
+    localStorage.removeItem('validator-history');
+    setHistory([]);
+    setShowDeleteModal(false);
   };
 
   return (
     <div className="container mx-auto p-6 max-w-5xl">
-      <h1 className="text-3xl font-bold mb-2">Analysis History</h1>
-      <p className="text-gray-600 dark:text-gray-400 mb-6">
-        Review and search past bullshit detections.
-      </p>
-
-      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border mb-6 flex flex-col sm:flex-row gap-4">
-        <input
-          type="text"
-          placeholder="Search analyses..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
-        />
-
-        <select
-          value={filterVerdict}
-          onChange={(e) => setFilterVerdict(e.target.value as any)}
-          className="px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
-        >
-          <option value="all">All Verdicts</option>
-          <option value="bullshit">Bullshit</option>
-          <option value="mostly true">Mostly True</option>
-          <option value="neutral">Neutral</option>
-        </select>
-
-        <button
-          onClick={clearHistory}
-          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-        >
-          Clear All
-        </button>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">History</h1>
+        {history.length > 0 && (
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition flex items-center gap-2"
+          >
+            <Trash2 className="h-4 w-4" />
+            Delete All
+          </button>
+        )}
       </div>
 
-      {filtered.length === 0 ? (
+      {history.length === 0 ? (
         <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-          {analyses.length === 0 ? 'No analyses yet. Try detecting some bullshit!' : 'No results match your filters.'}
+          <p className="text-lg">No validation history yet.</p>
+          <p className="text-sm mt-2">Start validating claims to see them here.</p>
         </div>
       ) : (
         <div className="space-y-4">
-          {filtered.map((analysis) => (
+          {history.map((item) => (
             <div
-              key={analysis.id}
-              className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border hover:shadow-md transition"
+              key={item.id}
+              className="bg-white dark:bg-gray-800 p-6 rounded-lg border shadow-sm hover:shadow transition"
             >
               <div className="flex justify-between items-start mb-3">
-                <div className="flex-1">
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                    {new Date(analysis.timestamp).toLocaleString()}
-                  </p>
-                  <p className="font-medium">{analysis.text}</p>
-                </div>
-                <div className="flex items-center gap-2 ml-4">
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    analysis.verdict === 'bullshit' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
-                    analysis.verdict === 'mostly true' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                    'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
-                  }`}>
-                    {analysis.verdict === 'bullshit' ? 'Bullshit' : analysis.verdict === 'mostly true' ? 'Mostly True' : 'Neutral'}
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {format(new Date(item.timestamp), 'MMM d, yyyy • h:mm a')}
+                  <span className="ml-2 px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300">
+                    {item.mode === 'professional' ? 'Pro' : 'Voter'}
                   </span>
-                  <span className="text-sm font-bold">{(analysis.score * 100).toFixed(0)}%</span>
-                </div>
+                </p>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">{analysis.explanation}</p>
+              <p className="font-medium text-gray-900 dark:text-white mb-2">{item.claim}</p>
+              <div className="flex items-center gap-3">
+                <span
+                  className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                    item.verdict === 'bullshit'
+                      ? 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
+                      : item.verdict === 'mostly true'
+                      ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
+                      : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300'
+                  }`}
+                >
+                  {item.verdict === 'bullshit' ? 'Bullshit' : item.verdict === 'mostly true' ? 'Mostly True' : 'Neutral'}
+                </span>
+                <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full transition-all ${
+                      item.score > 0.7 ? 'bg-red-500' : item.score > 0.4 ? 'bg-yellow-500' : 'bg-green-500'
+                    }`}
+                    style={{ width: `${item.score * 100}%` }}
+                  />
+                </div>
+                <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  {(item.score * 100).toFixed(0)}%
+                </span>
+              </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Delete All Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-red-100 dark:bg-red-900 rounded-full">
+                <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
+              </div>
+              <h2 className="text-xl font-bold">Delete All History?</h2>
+            </div>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              This will permanently delete <strong>{history.length}</strong> validation records.
+              This action <strong>cannot be undone</strong>.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={deleteAll}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition"
+              >
+                Delete All
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
