@@ -17,7 +17,6 @@ export default function SentimentPage() {
     setLoading(true);
     setResults(null);
 
-    // Mock data
     setTimeout(() => {
       setResults({
         topic: 'Climate Change Policy',
@@ -49,6 +48,7 @@ export default function SentimentPage() {
 
       {results && (
         <div className="grid md:grid-cols-3 gap-6">
+          {/* Positive */}
           <div className="bg-green-50 dark:bg-green-900/20 p-6 rounded-lg border border-green-200 dark:border-green-800">
             <div className="text-3xl font-bold text-green-600 dark:text-green-400">
               {((results.positive / results.totalPosts) * 100).toFixed(1)}%
@@ -57,6 +57,34 @@ export default function SentimentPage() {
             <div className="text-2xl font-medium mt-1">{results.positive} posts</div>
           </div>
 
+          {/* Neutral */}
           <div className="bg-yellow-50 dark:bg-yellow-900/20 p-6 rounded-lg border border-yellow-200 dark:border-yellow-800">
             <div className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">
-              {((results.neutral / results.totalPosts) * 100
+              {((results.neutral / results.totalPosts) * 100).toFixed(1)}%
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Neutral</div>
+            <div className="text-2xl font-medium mt-1">{results.neutral} posts</div>
+          </div>
+
+          {/* Negative */}
+          <div className="bg-red-50 dark:bg-red-900/20 p-6 rounded-lg border border-red-200 dark:border-red-800">
+            <div className="text-3xl font-bold text-red-600 dark:text-red-400">
+              {((results.negative / results.totalPosts) * 100).toFixed(1)}%
+            </div>
+            <div className="text-sm text-gray-600 dark:text-gray-400">Negative</div>
+            <div className="text-2xl font-medium mt-1">{results.negative} posts</div>
+          </div>
+        </div>
+      )}
+
+      {results && (
+        <div className="mt-8 p-6 bg-gray-50 dark:bg-gray-800 rounded-lg border">
+          <h3 className="font-semibold mb-2">Topic: {results.topic}</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Based on {results.totalPosts} recent posts from public sources.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
