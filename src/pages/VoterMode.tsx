@@ -11,6 +11,10 @@ import { AnalysisResult, AIModelConfig } from '../types';
 import { CheckCircle2, XCircle, HelpCircle, AlertTriangle, AlertCircle } from 'lucide-react';
 import { AVAILABLE_MODELS } from '../config/aiModels';
 
+export default function VoterMode() {
+  return <div className="p-8 text-2xl">Voter Mode: Simple, fast fact checks.</div>;
+}
+
 export function VoterMode() {
   const { setCurrentAnalysis, isAnalyzing, setIsAnalyzing } = useApp();
   const { getActiveConfig, configs, selectedModelId } = useModel();

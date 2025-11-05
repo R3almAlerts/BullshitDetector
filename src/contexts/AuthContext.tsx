@@ -1,6 +1,13 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
+// src/contexts/AuthContext.tsx
+import { createContext, ReactNode } from 'react';
+export const AuthContext = createContext<any>(null);
+export function AuthProvider({ children }: { children: ReactNode }) {
+  return <AuthContext.Provider value={{ user: null }}>{children}</AuthContext.Provider>;
+}
+
 interface AuthContextType {
   user: any | null;
   loading: boolean;

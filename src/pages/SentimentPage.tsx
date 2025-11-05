@@ -4,6 +4,11 @@ import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { Search, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
+// src/pages/SentimentPage.tsx
+export default function SentimentPage() {
+  return <div className="p-8 text-2xl">Sentiment Trends Dashboard</div>;
+}
+
 export function SentimentPage() {
   const [topic, setTopic] = useState('');
   const [isSearching, setIsSearching] = useState(false);

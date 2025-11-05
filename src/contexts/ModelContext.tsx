@@ -3,6 +3,14 @@ import { AIModelConfig } from '../types';
 import { DEFAULT_MODEL_ID } from '../config/aiModels';
 import { supabase } from '../lib/supabase';
 
+// src/contexts/ModelContext.tsx
+import { createContext, ReactNode } from 'react';
+export const ModelContext = createContext<any>(null);
+export function ModelProvider({ children }: { children: ReactNode }) {
+  return <ModelContext.Provider value={{ model: 'grok' }}>{children}</ModelContext.Provider>;
+}
+
+
 interface ModelContextType {
   configs: Record<string, AIModelConfig>;
   selectedModelId: string;

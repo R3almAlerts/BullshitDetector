@@ -7,6 +7,11 @@ import { Search, Eye, Trash2 } from 'lucide-react';
 import { AnalysisResult, VerdictLevel } from '../types';
 import { generateMockAnalysis } from '../utils/mockAnalysis';
 
+// src/pages/HistoryPage.tsx
+export default function HistoryPage() {
+  return <div className="p-8 text-2xl">Your Analysis History</div>;
+}
+
 export function HistoryPage() {
   const [analyses, setAnalyses] = useState<AnalysisResult[]>([]);
   const [searchQuery, setSearchQuery] = useState('');

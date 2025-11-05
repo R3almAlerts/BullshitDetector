@@ -13,6 +13,11 @@ import { AnalysisResult, AIModelConfig } from '../types';
 import { FileText, Link as LinkIcon, Upload, Download, Share2, AlertCircle } from 'lucide-react';
 import { AVAILABLE_MODELS } from '../config/aiModels';
 
+// src/pages/ProfessionalMode.tsx
+export default function ProfessionalMode() {
+  return <div className="p-8 text-2xl">Professional Mode: Deep analysis with sources.</div>;
+}
+
 export function ProfessionalMode() {
   const { setCurrentAnalysis, isAnalyzing, setIsAnalyzing } = useApp();
   const { configs, selectedModelId } = useModel();

@@ -1,16 +1,13 @@
-// src/main.tsx (updated)
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
-const container = document.getElementById('root');
-if (container) {
-  createRoot(container).render(
+const root = document.getElementById('root');
+if (root) {
+  createRoot(root).render(
     <StrictMode>
       <App />
-    </StrictMode>,
+    </StrictMode>
   );
-} else {
-  console.error('Failed to find root element');
 }

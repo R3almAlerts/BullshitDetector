@@ -11,6 +11,11 @@ import { AVAILABLE_MODELS, getModelsByProvider } from '../config/aiModels';
 import { AIProvider } from '../types';
 import { Sun, Zap, Bell, Save, Brain, Eye, EyeOff, ChevronDown, ChevronUp } from 'lucide-react';
 
+// src/pages/SettingsPage.tsx
+export default function SettingsPage() {
+  return <div className="p-8 text-2xl">Settings & Preferences</div>;
+}
+
 export function SettingsPage() {
   const { theme, toggleTheme } = useTheme();
   const { mode, setMode } = useUserMode();

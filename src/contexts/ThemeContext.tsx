@@ -1,6 +1,13 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { ThemeMode } from '../types';
 
+// src/contexts/ThemeContext.tsx
+import { createContext, ReactNode } from 'react';
+export const ThemeContext = createContext<any>(null);
+export function ThemeProvider({ children }: { children: ReactNode }) {
+  return <ThemeContext.Provider value={{ theme: 'light' }}>{children}</ThemeContext.Provider>;
+}
+
 interface ThemeContextType {
   theme: ThemeMode;
   toggleTheme: () => void;
