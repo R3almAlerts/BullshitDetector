@@ -2,13 +2,14 @@ import { createContext, useContext, useState, ReactNode } from 'react';
 
 interface AppContextType {
   showOnboarding: boolean;
-  setShowOnboarding: (v: boolean) => void;
+  setShowOnboarding: (value: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [showOnboarding, setShowOnboarding] = useState(true);
+
   return (
     <AppContext.Provider value={{ showOnboarding, setShowOnboarding }}>
       {children}
@@ -16,8 +17,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export const useApp = () => {
-  const ctx = useContext(AppContext);
-  if (!ctx) throw new Error('useApp must be used within AppProvider');
-  return ctx;
+export const useApp = (): AppContextType => {
+  const context = useContext(AppContext);
+  if (!context) {
+    throw new Error('useApp must be used within AppProvider');
+  }
+  return context;
 };

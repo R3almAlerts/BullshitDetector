@@ -1,16 +1,17 @@
 import { createContext, useContext, useState, ReactNode } from 'react';
 
-type Mode = 'voter' | 'professional';
+type UserMode = 'voter' | 'professional';
 
 interface UserModeContextType {
-  mode: Mode;
-  setMode: (m: Mode) => void;
+  mode: UserMode;
+  setMode: (mode: UserMode) => void;
 }
 
 const UserModeContext = createContext<UserModeContextType | undefined>(undefined);
 
 export function UserModeProvider({ children }: { children: ReactNode }) {
-  const [mode, setMode] = useState<Mode>('voter');
+  const [mode, setMode] = useState<UserMode>('voter');
+
   return (
     <UserModeContext.Provider value={{ mode, setMode }}>
       {children}
@@ -18,8 +19,10 @@ export function UserModeProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export const useUserMode = () => {
-  const ctx = useContext(UserModeContext);
-  if (!ctx) throw new Error('useUserMode must be used within UserModeProvider');
-  return ctx;
+export const useUserMode = (): UserModeContextType => {
+  const context = useContext(UserModeContext);
+  if (!context) {
+    throw new Error('useUserMode must be used within UserModeProvider');
+  }
+  return context;
 };

@@ -5,6 +5,12 @@ export type SentimentType = 'positive' | 'neutral' | 'negative';
 
 export type AIProvider = 'xai' | 'openai' | 'anthropic' | 'google' | 'custom';
 
+// src/contexts/index.ts
+import { createContext, type ReactNode } from 'react';
+
+export { createContext };
+export type { ReactNode };
+
 export interface AIModel {
   id: string;
   name: string;
