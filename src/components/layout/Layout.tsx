@@ -12,7 +12,7 @@ export default function Layout() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-purple-600">Bullshit Detector</h1>
+              <h1 className="text-2xl font-bold text-purple-600">Validator</h1>
             </div>
             <nav className="flex space-x-1">
               <NavLink
@@ -25,7 +25,7 @@ export default function Layout() {
                   }`
                 }
               >
-                Voter
+                Validator
               </NavLink>
               <NavLink
                 to="/sentiment"

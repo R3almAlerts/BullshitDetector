@@ -1,6 +1,6 @@
 // src/routes.tsx
 import { Routes, Route } from 'react-router-dom';
-import VoterMode from './pages/VoterMode';
+import Validator from './pages/Validator';
 import SentimentPage from './pages/SentimentPage';
 import HistoryPage from './pages/HistoryPage';
 import SettingsPage from './pages/SettingsPage';
@@ -10,7 +10,7 @@ export default function AppRoutes() {
   return (
     <Routes>
       <Route element={<Layout />}>
-        <Route path="/" element={<VoterMode />} />
+        <Route path="/" element={<Validator />} />
         <Route path="/sentiment" element={<SentimentPage />} />
         <Route path="/history" element={<HistoryPage />} />
         <Route path="/settings" element={<SettingsPage />} />
