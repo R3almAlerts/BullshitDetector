@@ -1,9 +1,4 @@
 // src/lib/db.ts
-import { readFile, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
-
-const DB_PATH = join(import.meta.env.DEV ? './' : './', 'bullshit-detector-db.json');
-
 interface DB {
   apiKey: string;
   model: 'grok-3' | 'grok-4';
@@ -14,36 +9,48 @@ const DEFAULT_DB: DB = {
   model: 'grok-3',
 };
 
-async function readDB(): Promise<DB> {
-  try {
-    const data = await readFile(DB_PATH, 'utf-8');
-    return JSON.parse(data);
-  } catch (error) {
-    // File doesn't exist or is invalid → return default
-    return { ...DEFAULT_DB };
-  }
-}
-
-async function writeDB(data: DB): Promise<void> {
-  try {
-    await writeFile(DB_PATH, JSON.stringify(data, null, 2), 'utf-8');
-  } catch (error) {
-    console.error('Failed to write DB:', error);
-  }
-}
+const DB_KEY = 'bullshit-detector-db';
 
 export const db = {
+  /**
+   * Load settings from localStorage
+   */
   async get(): Promise<DB> {
-    return await readDB();
+    try {
+      const raw = localStorage.getItem(DB_KEY);
+      if (!raw) return { ...DEFAULT_DB };
+      const parsed = JSON.parse(raw);
+      return {
+        apiKey: typeof parsed.apiKey === 'string' ? parsed.apiKey : DEFAULT_DB.apiKey,
+        model: parsed.model === 'grok-4' ? 'grok-4' : DEFAULT_DB.model,
+      };
+    } catch (error) {
+      console.warn('Failed to read from localStorage:', error);
+      return { ...DEFAULT_DB };
+    }
   },
 
+  /**
+   * Save API key
+   */
   async setApiKey(key: string): Promise<void> {
-    const current = await readDB();
-    await writeDB({ ...current, apiKey: key.trim() });
+    try {
+      const current = await db.get();
+      localStorage.setItem(DB_KEY, JSON.stringify({ ...current, apiKey: key.trim() }));
+    } catch (error) {
+      console.error('Failed to save API key:', error);
+    }
   },
 
+  /**
+   * Save model selection
+   */
   async setModel(model: 'grok-3' | 'grok-4'): Promise<void> {
-    const current = await readDB();
-    await writeDB({ ...current, model });
+    try {
+      const current = await db.get();
+      localStorage.setItem(DB_KEY, JSON.stringify({ ...current, model }));
+    } catch (error) {
+      console.error('Failed to save model:', error);
+    }
   },
 };

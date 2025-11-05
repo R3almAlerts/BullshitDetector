@@ -16,11 +16,11 @@ interface ModelContextType {
 const ModelContext = createContext<ModelContextType | undefined>(undefined);
 
 export function ModelProvider({ children }: { children: ReactNode }) {
-  const [apiKey, setApiKeyState] = useState('');
+  const [apiKey, setApiKeyState] = useState<string>('');
   const [model, setModelState] = useState<Model>('grok-3');
   const [isValidKey, setIsValidKey] = useState<boolean | null>(null);
 
-  // Load from local JSON DB on mount
+  // Load from localStorage on mount
   useEffect(() => {
     (async () => {
       try {
@@ -28,31 +28,23 @@ export function ModelProvider({ children }: { children: ReactNode }) {
         setApiKeyState(data.apiKey);
         setModelState(data.model);
       } catch (error) {
-        console.error('Failed to load DB:', error);
+        console.error('Failed to load settings:', error);
       }
     })();
   }, []);
 
-  // Save API key to JSON DB
+  // Save API key
   const setApiKey = async (key: string) => {
     const trimmed = key.trim();
     setApiKeyState(trimmed);
-    try {
-      await db.setApiKey(trimmed);
-      setIsValidKey(null); // Reset validation
-    } catch (error) {
-      console.error('Failed to save API key:', error);
-    }
+    await db.setApiKey(trimmed);
+    setIsValidKey(null); // Reset validation
   };
 
-  // Save model to JSON DB
+  // Save model
   const setModel = async (model: Model) => {
     setModelState(model);
-    try {
-      await db.setModel(model);
-    } catch (error) {
-      console.error('Failed to save model:', error);
-    }
+    await db.setModel(model);
   };
 
   // Test API key with xAI
