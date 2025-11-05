@@ -1,11 +1,9 @@
 // src/components/layout/Layout.tsx
 import { Outlet, NavLink } from 'react-router-dom';
 import { useTheme } from '../../contexts/ThemeContext';
-import { useUserMode } from '../../contexts/UserModeContext';
 
 export default function Layout() {
   const { theme } = useTheme();
-  const { mode } = useUserMode();
 
   return (
     <div className={`min-h-screen ${theme === 'dark' ? 'dark bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'}`}>
@@ -29,20 +27,6 @@ export default function Layout() {
               >
                 Voter
               </NavLink>
-              {mode === 'professional' && (
-                <NavLink
-                  to="/professional"
-                  className={({ isActive }) =>
-                    `px-4 py-2 rounded-lg text-sm font-medium transition ${
-                      isActive
-                        ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300'
-                        : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
-                    }`
-                  }
-                >
-                  Pro
-                </NavLink>
-              )}
               <NavLink
                 to="/sentiment"
                 className={({ isActive }) =>
@@ -50,11 +34,11 @@ export default function Layout() {
                     isActive
                       ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300'
                       : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
-                    }`
-                  }
-                >
-                  Sentiment
-                </NavLink>
+                  }`
+                }
+              >
+                Sentiment
+              </NavLink>
               <NavLink
                 to="/history"
                 className={({ isActive }) =>
@@ -62,11 +46,11 @@ export default function Layout() {
                     isActive
                       ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300'
                       : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
-                    }`
-                  }
-                >
-                  History
-                </NavLink>
+                  }`
+                }
+              >
+                History
+              </NavLink>
               <NavLink
                 to="/settings"
                 className={({ isActive }) =>
@@ -74,11 +58,11 @@ export default function Layout() {
                     isActive
                       ? 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300'
                       : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
-                    }`
-                  }
-                >
-                  Settings
-                </NavLink>
+                  }`
+                }
+              >
+                Settings
+              </NavLink>
             </nav>
           </div>
         </div>
