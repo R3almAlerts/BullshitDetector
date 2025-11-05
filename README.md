@@ -1,57 +1,50 @@
 # Bullshit Detector
 
-BullshitDetector/
-├── src/
-│   ├── components/
-│   │   └── layout/
-│   │       └── AppLayout.tsx
-│   ├── contexts/
-│   │   ├── AppContext.tsx
-│   │   ├── AuthContext.tsx
-│   │   ├── ModelContext.tsx
-│   │   ├── ThemeContext.tsx
-│   │   └── UserModeContext.tsx
-│   ├── pages/
-│   │   ├── HomePage.tsx
-│   │   ├── VoterMode.tsx
-│   │   ├── ProfessionalMode.tsx
-│   │   ├── SentimentPage.tsx
-│   │   ├── HistoryPage.tsx
-│   │   └── SettingsPage.tsx
-│   ├── App.tsx
-│   ├── main.tsx
-│   └── index.css
-├── public/
-│   └── vite.svg
-├── index.html
-├── package.json
-├── vite.config.ts
-├── tailwind.config.js
-├── postcss.config.js
-└── README.md
-**Detect political spin, corporate jargon, and plain-old nonsense in real time.**
+**Real-time political claim checker powered by xAI's Grok.**
 
-![Demo](https://placehold.co/1200x600?text=Bullshit+Detector+Demo)
+Paste any statement, headline, or claim — get instant **Bullshit**, **Mostly True**, or **Neutral** verdict with **real-time sentiment analysis**.
+
+**No backend. No tracking. All local.**
 
 ---
 
 ## Features
 
-| Mode | Description |
-|------|-------------|
-| **Voter Mode** | Simple, opinion-free fact checks. |
-| **Professional Mode** | Deep-dive analysis with sources & citations. |
-| **Sentiment Dashboard** | Real-time sentiment trends. |
-| **History** | Review past analyses. |
-| **Dark / Light Theme** | Fully customizable. |
-| **Onboarding** | First-time user guidance. |
+| Feature | Status |
+|-------|--------|
+| **Voter Mode** – Instant verdicts | Done |
+| **Sentiment Dashboard** – Public opinion % | Done |
+| **Professional Mode** – Coming soon | In Progress |
+| **History** – Save & search past checks | Done |
+| **Settings** – Dark mode, model, API key | Done |
+| **xAI API** – Grok 3 (free) / Grok 4 (Premium) | Done |
+| **Local JSON DB** – `bullshit-detector-db.json` | Done |
+| **Zero backend** – Runs fully offline | Done |
 
 ---
 
-## Quick Start
+## Live Demo
+
+[https://bullshit-detector.vercel.app](https://bullshit-detector.vercel.app) *(coming soon)*
+
+---
+
+## Tech Stack
+
+- **React** + **Vite**
+- **Tailwind CSS**
+- **TypeScript**
+- **xAI API** (`api.x.ai`)
+- **Local JSON DB** (no `localStorage`)
+- **Vite dev server** with `fs.allow`
+
+---
+
+## Setup
+
+### 1. Clone & Install
 
 ```bash
-git clone https://github.com/BullshitDetector/BullshitDetector.git
+git clone https://github.com/yourusername/BullshitDetector.git
 cd BullshitDetector
-pnpm install   # or npm i / yarn
-pnpm dev       # starts Vite dev server
+pnpm install
