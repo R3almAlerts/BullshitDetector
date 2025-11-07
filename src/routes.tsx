@@ -1,6 +1,6 @@
 // src/routes.tsx
 import { Routes, Route } from 'react-router-dom';
-import Validator from './pages/Validator';
+import SplashPage from './pages/SplashPage'; // New
 import SentimentPage from './pages/SentimentPage';
 import SentimentDetail from './pages/SentimentDetail';
 import HistoryPage from './pages/HistoryPage';
@@ -12,8 +12,8 @@ import Layout from './components/layout/Layout';
 export default function AppRoutes() {
   return (
     <Routes>
+      <Route path="/" element={<SplashPage />} /> {/* New: Splash as landing */}
       <Route element={<Layout />}>
-        <Route path="/" element={<Validator />} />
         <Route path="/sentiment" element={<SentimentPage />} />
         <Route path="/sentiment/:type" element={<SentimentDetail />} />
         <Route path="/history" element={<HistoryPage />} />
