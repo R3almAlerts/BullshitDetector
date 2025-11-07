@@ -29,6 +29,7 @@ export default function SplashPage() {
     setError('');
     try {
       const result = await login(email, password);
+      console.log('Login result:', result); // Debug: Check if bypass happened
       if (result.isSuperAdmin) {
         // Super admin — bypass OTP, go to home
         navigate('/');
