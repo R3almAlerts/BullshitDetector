@@ -1,5 +1,5 @@
 // src/pages/Validator.tsx
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useModel } from '../contexts/ModelContext';
 import { useUserMode } from '../contexts/UserModeContext';
 import { saveToHistory } from '../lib/history';
@@ -8,6 +8,7 @@ interface Verdict {
   score: number;
   verdict: 'bullshit' | 'mostly true' | 'neutral';
   explanation: string;
+  riskAssessment?: string; // New: Professional only
   sources?: { title: string; url: string }[];
   sentiment?: { positive: number; neutral: number; negative: number; total: number };
 }
@@ -18,7 +19,7 @@ export default function Validator() {
   const [loading, setLoading] = useState(false);
 
   const { apiKey, model } = useModel();
-  const { mode } = useUserMode(); // 'voter' | 'professional'
+  const { mode } = useUserMode();
 
   const analyze = async () => {
     if (!claim.trim()) return;
@@ -50,19 +51,20 @@ export default function Validator() {
           messages: [
             {
               role: 'system',
-              content: `You are a fact-checker. Analyze: "${claim}".
+              content: `You are a professional fact-checker. Analyze: "${claim}".
               Respond **only** with valid JSON:
               {
                 "score": 0.0-1.0,
                 "verdict": "bullshit" | "mostly true" | "neutral",
-                "explanation": "2-3 sentence analysis"${isPro ? `,
-                "sources": [{"title": "Source", "url": "https://..."}],
-                "sentiment": {"positive": 0-100, "neutral": 0-100, "negative": 0-100, "total": sum}` : ''}
+                "explanation": "Detailed 3-4 sentence analysis with evidence breakdown"${isPro ? `,
+                "riskAssessment": "1-2 sentence risk level (low/medium/high) with why",
+                "sources": [3-5 {"title": "Source", "url": "https://..."}],
+                "sentiment": {"positive": 0-100, "neutral": 0-100, "negative": 0-100, "total": sum of 200 sample posts}` : ''}
               }
-              No markdown. Max 3 sources.`,
+              No markdown. Professional: Include citations; Voter: Keep concise.`,
             },
           ],
-          max_tokens: isPro ? 500 : 200,
+          max_tokens: isPro ? 800 : 200,
           temperature: 0.1,
         }),
       });
@@ -84,7 +86,7 @@ export default function Validator() {
 
       setResult(parsed);
 
-      // Auto-save to history
+      // Save to history
       if (parsed.verdict) {
         saveToHistory({
           claim,
@@ -104,6 +106,33 @@ export default function Validator() {
       setLoading(false);
     }
   };
+
+  const sentimentPie = useMemo(() => {
+    if (!result?.sentiment || result.sentiment.total === 0) return null;
+    const { positive, neutral, negative, total } = result.sentiment;
+    return (
+      <div className="relative">
+        <div className="flex justify-center items-center w-32 h-32 rounded-full bg-gray-200 dark:bg-gray-700">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">
+              {((total > 0 ? total / 200 * 100 : 0).toFixed(0))}%
+            </div>
+            <div className="text-xs text-gray-600 dark:text-gray-400">Coverage</div>
+          </div>
+        </div>
+        <div className="absolute inset-0 flex justify-center items-center">
+          <div className="w-20 h-20 bg-white dark:bg-gray-900 rounded-full" />
+        </div>
+        <style jsx>{`
+          .pie {
+            position: relative;
+            width: 32px;
+            height: 32px;
+          }
+        `}</style>
+      </div>
+    );
+  }, [result]);
 
   return (
     <div className="container mx-auto p-6 max-w-5xl">
@@ -163,10 +192,18 @@ export default function Validator() {
             <p className="text-gray-700 dark:text-gray-300">{result.explanation}</p>
           </div>
 
+          {/* Pro: Risk Assessment */}
+          {mode === 'professional' && result.riskAssessment && (
+            <div className="p-6 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
+              <h3 className="font-semibold mb-2">Risk Assessment</h3>
+              <p className="text-orange-800 dark:text-orange-300 text-sm">{result.riskAssessment}</p>
+            </div>
+          )}
+
           {/* Pro: Sentiment */}
           {mode === 'professional' && result.sentiment && result.sentiment.total > 0 && (
-            <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-6 rounded-lg border">
-              <h3 className="font-semibold mb-4">Public Sentiment</h3>
+            <div className="p-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg border">
+              <h3 className="font-semibold mb-4">Public Sentiment (200 Sample Posts)</h3>
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
                   <div className="text-2xl font-bold text-green-600 dark:text-green-400">
@@ -192,8 +229,8 @@ export default function Validator() {
 
           {/* Pro: Sources */}
           {mode === 'professional' && result.sources && result.sources.length > 0 && (
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border">
-              <h3 className="font-semibold mb-4">Sources</h3>
+            <div className="p-6 bg-white dark:bg-gray-800 rounded-lg border">
+              <h3 className="font-semibold mb-4">Sources (3-5 Citations)</h3>
               <ul className="space-y-2">
                 {result.sources.map((src, i) => (
                   <li key={i}>
