@@ -7,10 +7,16 @@ interface User {
   mode: 'voter' | 'professional';
 }
 
+interface OTP {
+  code: string;
+  expires: number;
+}
+
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  verifyOTP: (otp: string) => Promise<void>;
   logout: () => Promise<void>;
   isValidUser: (email: string, password: string) => boolean;
 }
@@ -24,6 +30,7 @@ const SUPER_ADMIN_PASSWORD = 'superpass123';
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [otp, setOTP] = useState<OTP | null>(null);
 
   useEffect(() => {
     // Load session from localStorage
@@ -47,12 +54,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const isValidUser = (email: string, password: string): boolean => {
-    return email === SUPER_ADMIN_EMAIL && password === SUPER_ADMIN_PASSWORD;
+    // Case-insensitive email match for super admin
+    const normalizedEmail = email.toLowerCase().trim();
+    const normalizedAdminEmail = SUPER_ADMIN_EMAIL.toLowerCase().trim();
+    const normalizedPassword = password; // Password is case-sensitive
+
+    console.log('Login attempt:', { normalizedEmail, normalizedAdminEmail, normalizedPassword, SUPER_ADMIN_PASSWORD });
+
+    return normalizedEmail === normalizedAdminEmail && normalizedPassword === SUPER_ADMIN_PASSWORD;
   };
 
   const login = async (email: string, password: string): Promise<void> => {
+    console.log('Login function called with:', { email, password });
+
     if (isValidUser(email, password)) {
-      // Super admin — bypass OTP completely
+      console.log('Super admin login — bypassing OTP');
+      // Super admin — Bypass OTP entirely
       const userData: User = {
         id: 'super-admin-id',
         email,
@@ -63,6 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    console.log('Regular user login — proceeding with OTP');
     // Regular user — verify with Supabase, then send OTP
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
@@ -85,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     // Send email (integrate with SMTP from AdminConfig)
-    await sendEmail(email, 'Your OTP Code', `Your 6-digit OTP code is: ${otpCode}\n\nIt expires in 5 minutes.\n\nIf you didn't request this, ignore this email.`);
+    await sendOTP(email, otpCode); // Function defined in smtp.ts
 
     // Set temp session (await OTP verification)
     saveSession({
@@ -129,7 +147,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
   };
 
-  const sendEmail = async (email: string, subject: string, text: string) => {
+  const sendOTP = async (email: string, code: string) => {
     // Fetch SMTP config from Supabase
     const { data: smtpConfig } = await supabase.from('smtp_config').select('*').single();
     if (!smtpConfig) throw new Error('SMTP config not set. Admin must configure in /admin-config.');
@@ -149,8 +167,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await transporter.sendMail({
       from: `"Bullshit Detector" <noreply@bullshitdetector.com>`,
       to: email,
-      subject,
-      text,
+      subject: 'Your OTP Code',
+      text: `Your 6-digit OTP code is: ${code}\n\nIt expires in 5 minutes.\n\nIf you didn't request this, ignore this email.`,
     });
   };
 
