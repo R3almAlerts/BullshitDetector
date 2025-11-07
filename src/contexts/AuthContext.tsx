@@ -26,7 +26,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Demo super admin (hardcoded for quick access; in prod, use Supabase users table)
-const SUPER_ADMIN_EMAIL = 'super@bullshitdetector.com';
+const SUPER_ADMIN_EMAIL = 'super@r3alm.com';
 const SUPER_ADMIN_PASSWORD = 'superpass123';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
