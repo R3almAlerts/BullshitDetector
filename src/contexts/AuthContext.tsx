@@ -1,18 +1,10 @@
 // src/contexts/AuthContext.tsx
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { supabase } from '../lib/supabase';
-import { sendEmail } from '../lib/smtp'; // New: Import SMTP sender
 
 interface User {
-  id: string;
   email: string;
   isAdmin: boolean;
   mode: 'voter' | 'professional';
-}
-
-interface OTP {
-  code: string;
-  expires: number;
 }
 
 interface AuthContextType {
@@ -30,7 +22,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const SUPER_ADMIN_EMAIL = 'admin@r3alm.com';
 const SUPER_ADMIN_PASSWORD = 'superpass123';
 
-export function AuthContextProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [otp, setOTP] = useState<OTP | null>(null);
@@ -95,12 +87,8 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
       expires_at: otpObj.expires,
     });
 
-    // Send email using SMTP (no Supabase dependency for sending)
-    await sendEmail(
-      email,
-      'Your OTP Code',
-      `Your 6-digit OTP code is: ${otpCode}\n\nIt expires in 5 minutes.\n\nIf you didn't request this, ignore this email.`
-    );
+    // Send email (integrate with SMTP from AdminConfig)
+    await sendOTP(email, otpCode); // Function defined in smtp.ts
 
     // Set temp session (await OTP verification)
     saveSession({
@@ -142,6 +130,31 @@ export function AuthContextProvider({ children }: { children: ReactNode }) {
   const logout = async (): Promise<void> => {
     clearSession();
     await supabase.auth.signOut();
+  };
+
+  const sendOTP = async (email: string, code: string) => {
+    // Fetch SMTP config from Supabase
+    const { data: smtpConfig } = await supabase.from('smtp_config').select('*').single();
+    if (!smtpConfig) throw new Error('SMTP config not set. Admin must configure in /admin-config.');
+
+    // Dynamic import nodemailer to avoid bundling issues
+    const nodemailer = await import('nodemailer');
+    const transporter = nodemailer.createTransport({
+      host: smtpConfig.host,
+      port: smtpConfig.port,
+      secure: smtpConfig.secure,
+      auth: {
+        user: smtpConfig.username,
+        pass: smtpConfig.password,
+      },
+    });
+
+    await transporter.sendMail({
+      from: `"Bullshit Detector" <noreply@bullshitdetector.com>`,
+      to: email,
+      subject: 'Your OTP Code',
+      text: `Your 6-digit OTP code is: ${code}\n\nIt expires in 5 minutes.\n\nIf you didn't request this, ignore this email.`,
+    });
   };
 
   return (
