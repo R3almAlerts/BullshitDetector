@@ -21,7 +21,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Internal admin config (in production, move to env or db)
 const ADMIN_EMAIL = 'admin@bullshitdetector.com';
-const ADMIN_OTP_SECRET = 'JBSWY3DPEHPK3PXP'; // Base32 secret for TOTP (generate with otpauth)
+const ADMIN_OTP_SECRET = 'JBSWY3DPEHPK3PXP'; // Base32 secret for TOTP
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -53,6 +53,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const generateOTP = async (): Promise<string> => {
     try {
       const { OTPAuth } = await import('otpauth');
+      if (!OTPAuth) {
+        throw new Error('OTP library not loaded. Run "pnpm add otpauth" and restart dev server.');
+      }
       const totp = new OTPAuth({
         issuer: 'BullshitDetector',
         label: 'Admin 2FA',
@@ -64,13 +67,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return totp.generate();
     } catch (error) {
       console.error('OTP Generation failed:', error);
-      throw new Error('OTP generation unavailable. Check otpauth installation.');
+      throw new Error('OTP generation unavailable. Ensure "otpauth" is installed: pnpm add otpauth');
     }
   };
 
   const validateOTP = async (otp: string): Promise<boolean> => {
     try {
       const { OTPAuth } = await import('otpauth');
+      if (!OTPAuth) {
+        throw new Error('OTP library not loaded. Run "pnpm add otpauth" and restart dev server.');
+      }
       const totp = new OTPAuth({
         issuer: 'BullshitDetector',
         label: 'Admin 2FA',
@@ -82,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return totp.validate({ token: otp }) !== null;
     } catch (error) {
       console.error('OTP Validation failed:', error);
-      throw new Error('OTP validation unavailable. Check otpauth installation.');
+      throw new Error('OTP validation unavailable. Ensure "otpauth" is installed: pnpm add otpauth');
     }
   };
 
