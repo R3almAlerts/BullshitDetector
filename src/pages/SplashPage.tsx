@@ -31,13 +31,16 @@ export default function SplashPage() {
       const result = await login(email, password);
       console.log('Login result:', result); // Debug: Check if bypass happened
       if (result.isSuperAdmin) {
+        console.log('Bypassing OTP — navigating to /');
         // Super admin — bypass OTP, go to home
-        navigate('/');
+        navigate('/', { replace: true }); // Use replace to prevent back button to login
         return;
       }
+      console.log('Not super admin — proceeding to OTP');
       // Regular user — proceed to OTP
       setStep('otp');
     } catch (err: any) {
+      console.log('Login error:', err);
       setError(err.message);
     } finally {
       setLoading(false);
