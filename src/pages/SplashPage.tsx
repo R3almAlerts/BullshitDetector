@@ -5,35 +5,43 @@ import { useNavigate } from 'react-router-dom';
 
 export default function SplashPage() {
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [otp, setOtp] = useState('');
-  const [step, setStep] = useState<'email' | 'otp'>('email');
+  const [step, setStep] = useState<'login' | 'otp'>('login');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [currentOTP, setCurrentOTP] = useState('');
 
-  const { login, generateOTP, isValidUser } = useAuth();
+  const { login, verifyOTP } = useAuth();
   const navigate = useNavigate();
 
-  const handleEmailSubmit = async () => {
-    if (email && isValidUser(email)) {
-      setStep('otp');
-      setError('');
-      try {
-        const otpCode = await generateOTP();
-        setCurrentOTP(otpCode);
-      } catch (err) {
-        setError('OTP generation failed. Try again.');
-      }
-    } else {
-      setError('Invalid admin email. Contact support.');
+  const handleLogin = async () => {
+    if (!email || !password) {
+      setError('Email and password required.');
+      return;
     }
-  };
 
-  const handleOTPSubmit = async () => {
     setLoading(true);
     setError('');
     try {
-      await login(email, otp);
+      await login(email, password);
+      setStep('otp');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOTP = async () => {
+    if (!otp) {
+      setError('OTP required.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    try {
+      await verifyOTP(otp);
       navigate('/');
     } catch (err: any) {
       setError(err.message);
@@ -56,48 +64,54 @@ export default function SplashPage() {
           </div>
         )}
 
-        {step === 'email' ? (
+        {step === 'login' ? (
           <>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Admin Email"
+              placeholder="Email"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:border-gray-600"
+            />
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
               className="w-full px-4 py-3 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:border-gray-600"
             />
             <button
-              onClick={handleEmailSubmit}
-              className="w-full py-3 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 transition-colors"
+              onClick={handleLogin}
+              disabled={loading}
+              className="w-full py-3 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 disabled:opacity-50 transition-colors"
             >
-              Next
+              {loading ? 'Logging in...' : 'Login'}
             </button>
           </>
         ) : (
           <>
-            <div className="mb-4 p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
-              <p className="text-sm text-gray-600 dark:text-gray-300">Your 8-digit OTP: <strong>{currentOTP}</strong></p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Expires in 30 seconds. Generate new if needed.</p>
-            </div>
+            <p className="text-center text-sm text-gray-600 mb-4">
+              OTP sent to {email}. Check your email.
+            </p>
             <input
               type="text"
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
-              maxLength={8}
-              placeholder="Enter 8-digit OTP"
+              placeholder="Enter 6-digit OTP"
               className="w-full px-4 py-3 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:border-gray-600"
             />
             <button
-              onClick={handleOTPSubmit}
-              disabled={loading || otp.length < 8}
-              className="w-full py-3 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              onClick={handleOTP}
+              disabled={loading}
+              className="w-full py-3 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 disabled:opacity-50 transition-colors"
             >
-              {loading ? 'Logging in...' : 'Login'}
+              {loading ? 'Verifying...' : 'Verify OTP'}
             </button>
             <button
-              onClick={() => setStep('email')}
+              onClick={() => setStep('login')}
               className="w-full mt-2 text-sm text-purple-600 hover:underline"
             >
-              Change Email
+              Back to Login
             </button>
           </>
         )}
