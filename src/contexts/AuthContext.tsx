@@ -57,14 +57,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isValidUser = (email: string, password: string): boolean => {
     const normalizedEmail = email.toLowerCase().trim();
     const normalizedAdminEmail = SUPER_ADMIN_EMAIL.toLowerCase().trim();
-    const normalizedPassword = password;
+    const normalizedPassword = password.trim();
 
-    return normalizedEmail === normalizedAdminEmail && normalizedPassword === SUPER_ADMIN_PASSWORD;
+    const isValid = normalizedEmail === normalizedAdminEmail && normalizedPassword === SUPER_ADMIN_PASSWORD;
+    console.log('Admin validation:', { normalizedEmail, normalizedAdminEmail, normalizedPassword, isValid });
+
+    return isValid;
   };
 
   const login = async (email: string, password: string): Promise<void> => {
+    console.log('Login attempt:', { email, password });
+
     if (isValidUser(email, password)) {
-      // Super admin — skip OTP completely
+      console.log('Super admin validated — bypassing OTP and Supabase');
+      // Super admin — bypass OTP entirely
       const userData: User = {
         id: 'super-admin-id',
         email,
@@ -75,6 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    console.log('Regular user — proceeding with Supabase + OTP');
     // Regular user — verify with Supabase, then send OTP
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
