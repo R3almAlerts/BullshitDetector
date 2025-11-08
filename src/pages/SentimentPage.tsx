@@ -1,8 +1,9 @@
 // src/pages/SentimentPage.tsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useModel } from '../contexts/ModelContext'; // Fixed: was ModelModelContext
+import { useModel } from '../contexts/ModelContext';
 import { useUserMode } from '../contexts/UserModeContext';
+import { supabase } from '../lib/supabase'; // New: For DB insert
 
 interface SentimentResult {
   topic: string;
@@ -99,6 +100,26 @@ export default function SentimentPage() {
       }
 
       setResult(parsed);
+
+      // New: DB Insert (async, user-specific)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { error } = await supabase
+          .from('sentiment_history')
+          .insert({
+            user_id: user.id,
+            topic,
+            positive: parsed.positive,
+            neutral: parsed.neutral,
+            negative: parsed.negative,
+            totalPosts: parsed.totalPosts,
+            explanation: parsed.explanation,
+            quotes: parsed.quotes,
+            sources: parsed.sources,
+          });
+
+        if (error) console.warn('DB save failed:', error.message); // Fallback no UI block
+      }
     } catch (error) {
       console.error('Analysis failed:', error);
       setResult({
@@ -126,84 +147,46 @@ export default function SentimentPage() {
   const negPct = total > 0 ? (result!.negative / total) * 100 : 0;
 
   return (
-    <div className="container mx-auto p-6 max-w-6xl">
-      <h1 className="text-3xl font-bold mb-2">Sentiment Dashboard</h1>
-      <p className="text-gray-600 dark:text-gray-400 mb-6">
-        {mode === 'professional'
-          ? 'In-depth public opinion analysis with quotes and sources.'
-          : 'Quick sentiment overview of public opinion.'}
-      </p>
+    <div className="container mx-auto p-6 max-w-5xl">
+      <h1 className="text-3xl font-bold mb-6">Sentiment Analyzer</h1>
+      <input
+        type="text"
+        value={topic}
+        onChange={(e) => setTopic(e.target.value)}
+        placeholder="Enter a topic to analyze sentiment..."
+        className="w-full p-4 border rounded-lg focus:ring-2 focus:ring-purple-500"
+      />
+      <button
+        onClick={analyzeSentiment}
+        disabled={loading || !topic.trim()}
+        className="mt-4 px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 transition"
+      >
+        {loading ? 'Analyzing...' : 'Analyze Sentiment'}
+      </button>
 
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border mb-8">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <input
-            type="text"
-            value={topic}
-            onChange={(e) => setTopic(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && analyzeSentiment()}
-            placeholder="e.g., Universal Basic Income, AI Regulation..."
-            className="flex-1 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:border-gray-600"
-            disabled={loading}
-          />
-          <button
-            onClick={analyzeSentiment}
-            disabled={loading || !topic.trim()}
-            className="px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
-          >
-            {loading ? (
-              <>
-                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" className="opacity-25" />
-                  <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" className="opacity-75" />
-                </svg>
-                Analyzing...
-              </>
-            ) : (
-              'Analyze'
-            )}
-          </button>
-        </div>
-      </div>
-
-      {result && total > 0 && (
-        <>
-          <div className="grid md:grid-cols-3 gap-6 mb-8">
-            <div
-              className="bg-green-50 dark:bg-green-900/20 p-6 rounded-lg border border-green-200 dark:border-green-800 cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => handleCardClick('positive')}
-            >
-              <div className="text-4xl font-bold text-green-600 dark:text-green-400">
-                {posPct.toFixed(1)}%
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Positive</div>
-              <div className="text-2xl font-medium mt-1">{result.positive} posts</div>
+      {result && (
+        <div className="mt-8">
+          <h2 className="text-2xl font-semibold mb-4">Results for "{result.topic}"</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div className="text-center p-4 bg-green-50 rounded-lg">
+              <div className="text-4xl font-bold text-green-600">{posPct.toFixed(1)}%</div>
+              <p className="text-sm text-green-700">Positive</p>
+              <p className="text-2xl font-medium mt-1">{result.positive} posts</p>
             </div>
-
-            <div
-              className="bg-yellow-50 dark:bg-yellow-900/20 p-6 rounded-lg border border-yellow-200 dark:border-yellow-800 cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => handleCardClick('neutral')}
-            >
-              <div className="text-4xl font-bold text-yellow-600 dark:text-yellow-400">
-                {neuPct.toFixed(1)}%
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Neutral</div>
-              <div className="text-2xl font-medium mt-1">{result.neutral} posts</div>
+            <div className="text-center p-4 bg-yellow-50 rounded-lg">
+              <div className="text-4xl font-bold text-yellow-600">{neuPct.toFixed(1)}%</div>
+              <p className="text-sm text-yellow-700">Neutral</p>
+              <p className="text-2xl font-medium mt-1">{result.neutral} posts</p>
             </div>
-
-            <div
-              className="bg-red-50 dark:bg-red-900/20 p-6 rounded-lg border border-red-200 dark:border-red-800 cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => handleCardClick('negative')}
-            >
-              <div className="text-4xl font-bold text-red-600 dark:text-red-400">
-                {negPct.toFixed(1)}%
-              </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Negative</div>
-              <div className="text-2xl font-medium mt-1">{result.negative} posts</div>
+            <div className="text-center p-4 bg-red-50 rounded-lg">
+              <div className="text-4xl font-bold text-red-600">{negPct.toFixed(1)}%</div>
+              <p className="text-sm text-red-700">Negative</p>
+              <p className="text-2xl font-medium mt-1">{result.negative} posts</p>
             </div>
           </div>
 
           <div className="bg-gray-50 dark:bg-gray-800 p-6 rounded-lg border mb-6">
-            <h3 className="font-semibold mb-2">Summary: {result.topic}</h3>
+            <h3 className="font-semibold mb-2">Summary</h3>
             <p className="text-sm text-gray-700 dark:text-gray-300">
               Based on <strong>{result.totalPosts}</strong> recent public posts.
             </p>
@@ -264,7 +247,7 @@ export default function SentimentPage() {
               </ul>
             </div>
           )}
-        </>
+        </div>
       )}
 
       {result && result.explanation.includes('Add your xAI API key') && (

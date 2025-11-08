@@ -7,52 +7,60 @@ export interface HistoryItem {
   verdict: 'bullshit' | 'mostly true' | 'neutral';
   score: number;
   mode: 'voter' | 'professional';
-  created_at: string;
+  timestamp: number;
 }
 
-export async function saveToHistory(item: Omit<HistoryItem, 'id' | 'created_at'>) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
-
-  const { data, error } = await supabase
-    .from('validation_history')
-    .insert({
-      user_id: user.id,
-      ...item,
-    })
-    .select()
-    .single();
-
-  if (error) console.error('Failed to save history:', error);
-  return data;
-}
-
-export async function getHistory(): Promise<HistoryItem[]> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
-
-  const { data, error } = await supabase
-    .from('validation_history')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
-
-  if (error) {
-    console.error('Failed to fetch history:', error);
+export const getHistory = (): HistoryItem[] => {
+  try {
+    const stored = localStorage.getItem('validatorHistory');
+    return stored ? JSON.parse(stored) as HistoryItem[] : [];
+  } catch (err) {
+    console.warn('Local history parse failed:', err);
     return [];
   }
+};
 
-  return data || [];
-}
+export const saveToHistory = async (item: Omit<HistoryItem, 'id' | 'timestamp'>) => {
+  const fullItem = {
+    id: crypto.randomUUID(),
+    timestamp: Date.now(),
+    ...item,
+  };
 
-export async function clearHistory() {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
+  // Local save (immediate)
+  const existing = getHistory();
+  const updated = [...existing, fullItem];
+  localStorage.setItem('validatorHistory', JSON.stringify(updated));
 
-  const { error } = await supabase
-    .from('validation_history')
-    .delete()
-    .eq('user_id', user.id);
+  // DB Save (async if user)
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { error } = await supabase.from('validation_history').insert(fullItem);
+      if (error) console.warn('DB history save failed:', error.message);
+    }
+  } catch (err) {
+    console.warn('DB history save error:', err);
+  }
 
-  if (error) console.error('Failed to clear history:', error);
-}
+  return fullItem;
+};
+
+export const clearHistory = async () => {
+  // Local clear
+  localStorage.removeItem('validatorHistory');
+
+  // DB Clear (async if user)
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { error: vError } = await supabase.from('validation_history').delete().eq('user_id', user.id);
+      if (vError) console.warn('DB validation clear failed:', vError.message);
+
+      const { error: sError } = await supabase.from('sentiment_history').delete().eq('user_id', user.id);
+      if (sError) console.warn('DB sentiment clear failed:', sError.message);
+    }
+  } catch (err) {
+    console.warn('DB history clear error:', err);
+  }
+};

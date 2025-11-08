@@ -3,13 +3,14 @@ import { useState, useMemo } from 'react';
 import { useModel } from '../contexts/ModelContext';
 import { useUserMode } from '../contexts/UserModeContext';
 import { saveToHistory } from '../lib/history';
+import { supabase } from '../lib/supabase'; // New: For DB insert
 
 interface Verdict {
   score: number;
   verdict: 'bullshit' | 'mostly true' | 'neutral';
   explanation: string;
   riskAssessment?: string;
-  sources?: { title: string; url: string; extract?: string }[]; // Added extract
+  sources?: { title: string; url: string; extract?: string }[];
   sentiment?: { positive: number; neutral: number; negative: number; total: number };
 }
 
@@ -17,7 +18,7 @@ export default function Validator() {
   const [claim, setClaim] = useState('');
   const [result, setResult] = useState<Verdict | null>(null);
   const [loading, setLoading] = useState(false);
-  const [expandedSources, setExpandedSources] = useState<Set<number>>(new Set()); // For expand/hide
+  const [expandedSources, setExpandedSources] = useState<Set<number>>(new Set());
 
   const { apiKey, model } = useModel();
   const { mode } = useUserMode();
@@ -27,7 +28,7 @@ export default function Validator() {
 
     setLoading(true);
     setResult(null);
-    setExpandedSources(new Set()); // Reset expands
+    setExpandedSources(new Set());
 
     if (!apiKey) {
       setResult({
@@ -88,7 +89,7 @@ export default function Validator() {
 
       setResult(parsed);
 
-      // Auto-save to history
+      // Local save (optimistic)
       if (parsed.verdict) {
         saveToHistory({
           claim,
@@ -96,6 +97,26 @@ export default function Validator() {
           score: parsed.score,
           mode,
         });
+      }
+
+      // New: DB Insert (async, user-specific)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && parsed.verdict) {
+        const { error } = await supabase
+          .from('validation_history')
+          .insert({
+            user_id: user.id,
+            claim,
+            verdict: parsed.verdict,
+            score: parsed.score,
+            mode,
+            explanation: parsed.explanation,
+            riskAssessment: parsed.riskAssessment,
+            sources: parsed.sources,
+            sentiment: parsed.sentiment,
+          });
+
+        if (error) console.warn('DB save failed:', error.message); // Fallback to local; no UI block
       }
     } catch (error) {
       console.error('Validation failed:', error);
@@ -122,153 +143,99 @@ export default function Validator() {
   };
 
   return (
-    <div className="container mx-auto p-6 max-w-5xl">
-      <h1 className="text-3xl font-bold mb-2">Validator</h1>
-      <p className="text-gray-600 dark:text-gray-400 mb-6">
-        {mode === 'professional'
-          ? 'Professional-grade claim validation with sources and sentiment.'
-          : 'Quick truth check for any claim.'}
-      </p>
-
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border mb-8">
-        <textarea
-          value={claim}
-          onChange={(e) => setClaim(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && analyze()}
-          placeholder="e.g., The moon landing was faked..."
-          className="w-full h-32 p-4 border rounded-lg resize-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:border-gray-600"
-          disabled={loading}
-        />
-        <button
-          onClick={analyze}
-          disabled={loading || !claim.trim()}
-          className="mt-4 px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
-        >
-          {loading ? (
-            <>
-              <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" className="opacity-25" />
-                <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" className="opacity-75" />
-              </svg>
-              Validating...
-            </>
-          ) : (
-            'Validate Claim'
-          )}
-        </button>
-      </div>
+    <div className="container mx-auto p-6 max-w-4xl">
+      <h1 className="text-3xl font-bold mb-6">Validator</h1>
+      <textarea
+        value={claim}
+        onChange={(e) => setClaim(e.target.value)}
+        placeholder="Enter a claim to validate..."
+        className="w-full p-4 border rounded-lg resize-vertical h-32 focus:ring-2 focus:ring-purple-500"
+      />
+      <button
+        onClick={analyze}
+        disabled={loading || !claim.trim()}
+        className="mt-4 px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 transition"
+      >
+        {loading ? 'Analyzing...' : 'Validate Claim'}
+      </button>
 
       {result && (
-        <div className="space-y-6">
-          {/* Verdict */}
-          <div className="p-6 bg-white dark:bg-gray-800 rounded-lg border shadow-sm">
-            <div className="flex items-center gap-4 mb-4">
-              <span className="text-2xl font-bold">
-                {result.verdict === 'bullshit' ? 'Bullshit' : result.verdict === 'mostly true' ? 'Mostly True' : 'Neutral'}
-              </span>
-              <div className="flex-1 h-4 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                <div
-                  className={`h-full transition-all ${
-                    result.score > 0.7 ? 'bg-red-500' : result.score > 0.4 ? 'bg-yellow-500' : 'bg-green-500'
-                  }`}
-                  style={{ width: `${result.score * 100}%` }}
-                />
+        <div className="mt-6">
+          <h2 className="text-2xl font-semibold mb-4">Result</h2>
+          {/* Verdict Badge and Score */}
+          <div className="mb-4">
+            <span className={`px-4 py-2 rounded-full text-lg font-bold ${
+              result.verdict === 'bullshit' ? 'bg-red-100 text-red-800' :
+              result.verdict === 'mostly true' ? 'bg-green-100 text-green-800' :
+              'bg-yellow-100 text-yellow-800'
+            }`}>
+              {result.verdict === 'bullshit' ? '🛑 Bullshit' : result.verdict === 'mostly true' ? '✅ Mostly True' : '⚖️ Neutral'}
+            </span>
+            <div className="ml-4 inline-block">
+              <div className="w-64 h-4 bg-gray-200 rounded-full overflow-hidden">
+                <div className={`h-full ${
+                  result.score > 0.7 ? 'bg-red-500' : result.score > 0.4 ? 'bg-yellow-500' : 'bg-green-500'
+                }`} style={{ width: `${result.score * 100}%` }}></div>
               </div>
-              <span className="text-sm font-medium">{(result.score * 100).toFixed(0)}%</span>
+              <p className="text-sm text-gray-600 mt-1">{(result.score * 100).toFixed(0)}% Confidence</p>
             </div>
-            <p className="text-gray-700 dark:text-gray-300">{result.explanation}</p>
           </div>
 
-          {/* Pro: Risk Assessment */}
-          {mode === 'professional' && result.riskAssessment && (
-            <div className="p-6 bg-orange-50 dark:bg-orange-900/20 rounded-lg border border-orange-200 dark:border-orange-800">
-              <h3 className="font-semibold mb-2">Risk Assessment</h3>
-              <p className="text-orange-800 dark:text-orange-300 text-sm">{result.riskAssessment}</p>
+          {/* Explanation */}
+          <div className="mb-6">
+            <h3 className="font-semibold mb-2">Explanation</h3>
+            <p className="text-gray-700">{result.explanation}</p>
+          </div>
+
+          {/* Risk Assessment (Pro Mode) */}
+          {result.riskAssessment && (
+            <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+              <h3 className="font-semibold mb-2 flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 text-yellow-600" />
+                Risk Assessment
+              </h3>
+              <p className="text-sm text-yellow-800 dark:text-yellow-200">{result.riskAssessment}</p>
             </div>
           )}
 
-          {/* Pro: Sentiment */}
-          {mode === 'professional' && result.sentiment && result.sentiment.total > 0 && (
-            <div className="p-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg border">
-              <h3 className="font-semibold mb-4">Public Sentiment (200 Sample Posts)</h3>
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                    {((result.sentiment.positive / result.sentiment.total) * 100).toFixed(0)}%
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Positive</div>
+          {/* Sentiment Breakdown (Pro Mode) */}
+          {result.sentiment && (
+            <div className="mb-6">
+              <h3 className="font-semibold mb-2">Sentiment Analysis</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center p-4 bg-green-50 rounded-lg">
+                  <p className="text-2xl font-bold text-green-600">{result.sentiment.positive}</p>
+                  <p className="text-sm text-green-700">Positive</p>
                 </div>
-                <div>
-                  <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-                    {((result.sentiment.neutral / result.sentiment.total) * 100).toFixed(0)}%
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Neutral</div>
+                <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                  <p className="text-2xl font-bold text-yellow-600">{result.sentiment.neutral}</p>
+                  <p className="text-sm text-yellow-700">Neutral</p>
                 </div>
-                <div>
-                  <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-                    {((result.sentiment.negative / result.sentiment.total) * 100).toFixed(0)}%
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Negative</div>
+                <div className="text-center p-4 bg-red-50 rounded-lg">
+                  <p className="text-2xl font-bold text-red-600">{result.sentiment.negative}</p>
+                  <p className="text-sm text-red-700">Negative</p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* Pro: Sources with Extracts */}
-          {mode === 'professional' && result.sources && result.sources.length > 0 && (
-            <div className="p-6 bg-white dark:bg-gray-800 rounded-lg border">
-              <h3 className="font-semibold mb-4">Sources (3-5 Citations)</h3>
+          {/* Sources (Pro Mode) */}
+          {result.sources && result.sources.length > 0 && (
+            <div className="mb-6">
+              <h3 className="font-semibold mb-2">Sources</h3>
               <div className="space-y-4">
                 {result.sources.map((src, i) => (
-                  <div key={i} className="border-b border-gray-200 dark:border-gray-700 pb-4 last:border-b-0">
-                    <button
-                      onClick={() => toggleSource(i)}
-                      className="flex items-center justify-between w-full text-left"
-                      aria-expanded={expandedSources.has(i)}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm font-medium text-purple-600">{src.title}</span>
-                        <a
-                          href={src.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-blue-600 hover:underline"
-                        >
-                          {src.url}
-                        </a>
-                      </div>
-                      <svg
-                        className={`w-5 h-5 transition-transform duration-200 ${
-                          expandedSources.has(i) ? 'rotate-180' : ''
-                        }`}
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </button>
-                    {expandedSources.has(i) && src.extract && (
-                      <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-900 rounded text-sm text-gray-700 dark:text-gray-300">
-                        {src.extract}
-                      </div>
-                    )}
+                  <div key={i} className="border rounded-lg p-4">
+                    <h4 className="font-medium mb-1">{src.title}</h4>
+                    <a href={src.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-sm">
+                      {src.url}
+                    </a>
+                    {src.extract && <p className="text-sm text-gray-600 mt-2">{src.extract}</p>}
                   </div>
                 ))}
               </div>
             </div>
           )}
-        </div>
-      )}
-
-      {result && result.explanation.includes('Add your xAI API key') && (
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 p-4 rounded-lg">
-          <p className="text-sm text-yellow-800 dark:text-yellow-300">
-            {result.explanation}{' '}
-            <a href="/settings" className="underline font-medium">
-              Go to Settings
-            </a>
-          </p>
         </div>
       )}
 
