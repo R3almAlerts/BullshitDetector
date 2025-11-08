@@ -3,7 +3,8 @@ import { useState, useMemo } from 'react';
 import { useModel } from '../contexts/ModelContext';
 import { useUserMode } from '../contexts/UserModeContext';
 import { saveToHistory } from '../lib/history';
-import { supabase } from '../lib/supabase'; // New: For DB insert
+import { supabase } from '../lib/supabase';
+import { AlertCircle } from 'lucide-react'; // New: Import for icon in risk assessment
 
 interface Verdict {
   score: number;
@@ -91,7 +92,7 @@ export default function Validator() {
 
       // Local save (optimistic)
       if (parsed.verdict) {
-        saveToHistory({
+        await saveToHistory({
           claim,
           verdict: parsed.verdict,
           score: parsed.score,
@@ -99,7 +100,7 @@ export default function Validator() {
         });
       }
 
-      // New: DB Insert (async, user-specific)
+      // DB Insert (async, user-specific)
       const { data: { user } } = await supabase.auth.getUser();
       if (user && parsed.verdict) {
         const { error } = await supabase
