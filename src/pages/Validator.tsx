@@ -90,15 +90,17 @@ export default function Validator() {
 
       setResult(parsed);
 
+      // Get user for DB save
+      const { data: { user } } = await supabase.auth.getUser();
+
       // Local + DB save (optimistic local, pass user_id to history for DB)
       if (parsed.verdict) {
-        const { data: { user } } = await supabase.auth.getUser();
         await saveToHistory({
           claim,
           verdict: parsed.verdict,
           score: parsed.score,
           mode,
-        }, user?.id); // New: Pass user_id to history.ts
+        }, user?.id); // Pass user_id to avoid null violation
       }
     } catch (error) {
       console.error('Validation failed:', error);
