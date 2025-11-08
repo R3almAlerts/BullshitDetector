@@ -4,7 +4,7 @@ import { useModel } from '../contexts/ModelContext';
 import { useUserMode } from '../contexts/UserModeContext';
 import { saveToHistory } from '../lib/history';
 import { supabase } from '../lib/supabase';
-import { AlertCircle } from 'lucide-react'; // Fix: Import for icon
+import { AlertCircle } from 'lucide-react';
 
 interface Verdict {
   score: number;
@@ -103,6 +103,8 @@ export default function Validator() {
       // DB Insert (async, user-specific)
       const { data: { user } } = await supabase.auth.getUser();
       if (user && parsed.verdict) {
+        console.log('Inserting with user_id:', user.id); // New: Debug RLS match
+
         const insertData = {
           user_id: user.id,
           claim,
@@ -175,7 +177,7 @@ export default function Validator() {
               {result.verdict === 'bullshit' ? '🛑 Bullshit' : result.verdict === 'mostly true' ? '✅ Mostly True' : '⚖️ Neutral'}
             </span>
             <div className="ml-4 inline-block">
-              <div className="w-64 h-4 bg-gray-200 rounded-full overflow-hidden">
+              <div className="w-64 h-4 bg-gray-200 bg-gray-200 rounded-full overflow-hidden">
                 <div className={`h-full ${
                   result.score > 0.7 ? 'bg-red-500' : result.score > 0.4 ? 'bg-yellow-500' : 'bg-green-500'
                 }`} style={{ width: `${result.score * 100}%` }}></div>
