@@ -2,26 +2,80 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { Trash2, AlertCircle } from 'lucide-react';
+import { supabase } from '../lib/supabase'; // New: For optional Supabase sync (from log query)
 import { getHistory, clearHistory, type HistoryItem } from '../lib/history';
 
 export default function HistoryPage() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [loading, setLoading] = useState(true); // New: Loading state for fetch/mount
+  const [loading, setLoading] = useState(true); // Loading state for fetch/mount
 
-  const loadHistory = () => {
-    const rawHistory = getHistory() || []; // Fix: Fallback to [] if null/undefined (prevents .sort TypeError)
-    setHistory(rawHistory.sort((a, b) => b.timestamp - a.timestamp));
-    setLoading(false);
+  const loadHistory = async () => {
+    setLoading(true);
+    try {
+      // Local history fallback
+      let rawHistory: any = getHistory();
+      // Robust array conversion: Ensure it's always an array
+      const localHistory = Array.isArray(rawHistory) ? rawHistory : [];
+      
+      // Optional Supabase sync (user-specific; from log query)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: dbHistory, error } = await supabase
+          .from('validation_history') // Assumes table from log; adjust schema if needed
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+        if (error) {
+          console.warn('Supabase history fetch failed:', error.message);
+          setHistory(localHistory.sort((a, b) => b.timestamp - a.timestamp));
+        } else if (dbHistory && dbHistory.length > 0) {
+          // Map DB to HistoryItem if schema matches (e.g., claim, verdict, score, mode, timestamp=created_at)
+          const syncedHistory = dbHistory.map((item: any) => ({
+            id: item.id,
+            claim: item.claim,
+            verdict: item.verdict,
+            score: item.score,
+            mode: item.mode,
+            timestamp: new Date(item.created_at).getTime(),
+          })) as HistoryItem[];
+          setHistory(syncedHistory); // Prefer DB over local
+        } else {
+          setHistory(localHistory.sort((a, b) => b.timestamp - a.timestamp));
+        }
+      } else {
+        // No user: Use local only
+        setHistory(localHistory.sort((a, b) => b.timestamp - a.timestamp));
+      }
+    } catch (err) {
+      console.error('History load failed:', err);
+      setHistory([]); // Graceful fallback
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
     loadHistory();
   }, []);
 
-  const deleteAll = () => {
-    clearHistory();
-    setHistory([]);
+  const deleteAll = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // Delete from Supabase
+        const { error } = await supabase
+          .from('validation_history')
+          .delete()
+          .eq('user_id', user.id);
+        if (error) console.warn('Supabase delete failed:', error.message);
+      }
+      // Clear local
+      clearHistory();
+      setHistory([]);
+    } catch (err) {
+      console.error('Delete all failed:', err);
+    }
     setShowDeleteModal(false);
   };
 
