@@ -7,9 +7,10 @@ import HistoryPage from './pages/HistoryPage';
 import SettingsPage from './pages/SettingsPage';
 import AuthPage from './pages/AuthPage';
 import ProfilePage from './pages/ProfilePage';
-import UsersPage from './pages/UsersPage'; // New
+import UsersPage from './pages/UsersPage';
+import Validator from './pages/Validator'; // New: Import for bullshit detector
 import Layout from './components/layout/Layout';
-import { useProtected } from './contexts/AuthContext'; // New import
+import { useProtected } from './contexts/AuthContext';
 
 // Admin guard component
 function AdminRoute({ children }: { children: JSX.Element }) {
@@ -17,7 +18,7 @@ function AdminRoute({ children }: { children: JSX.Element }) {
     useProtected();
     return children;
   } catch {
-    return <Navigate to="/splash" replace />;
+    return <Navigate to="/" replace />;
   }
 }
 
@@ -26,6 +27,8 @@ export default function AppRoutes() {
     <Routes>
       <Route path="/" element={<SplashPage />} />
       <Route element={<Layout />}>
+        <Route index element={<Validator />} /> {/* New: Default post-login to Validator */}
+        <Route path="/validator" element={<Validator />} /> {/* New: Dedicated route for Validator */}
         <Route path="/sentiment" element={<SentimentPage />} />
         <Route path="/sentiment/:type" element={<SentimentDetail />} />
         <Route path="/history" element={<HistoryPage />} />
