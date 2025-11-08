@@ -67,7 +67,7 @@ export default function ProfilePage() {
           email: user.email,
           mode,
           created_at: profile?.created_at || new Date().toISOString(), // Preserve if exists
-        });
+        }, { onConflict: 'user_id' }); // Fix: Explicit onConflict for unique key (avoids 409 duplicate)
 
       if (error) {
         setError('Failed to update profile');
