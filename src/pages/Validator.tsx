@@ -2,7 +2,7 @@
 import { useState, useMemo } from 'react';
 import { useModel } from '../contexts/ModelContext';
 import { useUserMode } from '../contexts/UserModeContext';
-import { useAuth } from '../contexts/AuthContext'; // New: For user from context (no getUser duplicate)
+import { useAuth } from '../contexts/AuthContext'; // Fix: Use context for user (logged in session)
 import { saveToHistory } from '../lib/history';
 import { supabase } from '../lib/supabase';
 import { AlertCircle } from 'lucide-react';
@@ -24,7 +24,7 @@ export default function Validator() {
 
   const { apiKey, model } = useModel();
   const { mode } = useUserMode();
-  const { user } = useAuth(); // New: Get user from context (logged in session)
+  const { user } = useAuth(); // Fix: Get user from context (no getUser timing issue)
 
   const analyze = async () => {
     if (!claim.trim()) return;
