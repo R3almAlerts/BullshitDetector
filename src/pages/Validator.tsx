@@ -4,7 +4,7 @@ import { useModel } from '../contexts/ModelContext';
 import { useUserMode } from '../contexts/UserModeContext';
 import { saveToHistory } from '../lib/history';
 import { supabase } from '../lib/supabase';
-import { AlertCircle } from 'lucide-react'; // New: Import for icon in risk assessment
+import { AlertCircle } from 'lucide-react'; // Fix: Import for icon
 
 interface Verdict {
   score: number;
@@ -103,19 +103,21 @@ export default function Validator() {
       // DB Insert (async, user-specific)
       const { data: { user } } = await supabase.auth.getUser();
       if (user && parsed.verdict) {
+        const insertData = {
+          user_id: user.id,
+          claim,
+          verdict: parsed.verdict,
+          score: parsed.score,
+          mode,
+          explanation: parsed.explanation || null,
+          riskAssessment: parsed.riskAssessment || null,
+          sources: parsed.sources || null,
+          sentiment: parsed.sentiment || null,
+        };
+
         const { error } = await supabase
           .from('validation_history')
-          .insert({
-            user_id: user.id,
-            claim,
-            verdict: parsed.verdict,
-            score: parsed.score,
-            mode,
-            explanation: parsed.explanation,
-            riskAssessment: parsed.riskAssessment,
-            sources: parsed.sources,
-            sentiment: parsed.sentiment,
-          });
+          .insert(insertData);
 
         if (error) console.warn('DB save failed:', error.message); // Fallback to local; no UI block
       }
