@@ -22,43 +22,63 @@ export default function ProfilePage() {
 
   const fetchProfile = async () => {
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      navigate('/auth');
-      return;
+    setError('');
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        navigate('/auth');
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') { // No row found—common on first login
+          console.warn('Profile not found—will create on update:', error.message);
+        } else {
+          setError('Failed to fetch profile');
+          console.error('Profile fetch error:', error);
+        }
+      } else if (data) {
+        setProfile(data);
+        setMode(data.mode || 'voter'); // Fallback if null
+      }
+    } catch (err: any) {
+      setError('Network error fetching profile');
+      console.error('Profile fetch failed:', err);
+    } finally {
+      setLoading(false);
     }
-
-    const { data, error } = await supabase
-      .from('user_profiles')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
-
-    if (error && error.code !== 'PGRST116') {
-      setError('Failed to fetch profile');
-    } else if (data) {
-      setProfile(data);
-      setMode(data.mode);
-    }
-
-    setLoading(false);
   };
 
   const updateProfile = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { error } = await supabase
-      .from('user_profiles')
-      .upsert({
-        user_id: user.id,
-        mode,
-      });
+    try {
+      const { error } = await supabase
+        .from('user_profiles')
+        .upsert({
+          user_id: user.id,
+          email: user.email,
+          mode,
+          created_at: profile?.created_at || new Date().toISOString(), // Preserve if exists
+        });
 
-    if (error) {
-      setError('Failed to update profile');
-    } else {
-      setProfile({ ...profile, mode });
+      if (error) {
+        setError('Failed to update profile');
+        console.error('Profile update error:', error);
+      } else {
+        setProfile({ ...profile, mode, email: user.email, created_at: profile?.created_at || new Date().toISOString() });
+        console.log('Profile updated successfully');
+      }
+    } catch (err: any) {
+      setError('Network error updating profile');
+      console.error('Profile update failed:', err);
     }
   };
 
@@ -72,8 +92,8 @@ export default function ProfilePage() {
       {error && <p className="mb-4 p-3 bg-red-100 text-red-700 rounded">{error}</p>}
       <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border shadow-sm">
         <h2 className="text-xl font-semibold mb-4">Account Info</h2>
-        <p><strong>Email:</strong> {profile?.email}</p>
-        <p><strong>Created:</strong> {new Date(profile?.created_at || '').toLocaleDateString()}</p>
+        <p><strong>Email:</strong> {profile?.email || 'Not set'}</p>
+        <p><strong>Created:</strong> {profile ? new Date(profile.created_at).toLocaleDateString() : 'N/A'}</p>
         <p><strong>Mode:</strong> {mode}</p>
         <div className="mt-4">
           <label className="flex items-center mb-2">
