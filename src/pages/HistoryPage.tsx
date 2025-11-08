@@ -7,9 +7,12 @@ import { getHistory, clearHistory, type HistoryItem } from '../lib/history';
 export default function HistoryPage() {
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [loading, setLoading] = useState(true); // New: Loading state for fetch/mount
 
   const loadHistory = () => {
-    setHistory(getHistory().sort((a, b) => b.timestamp - a.timestamp));
+    const rawHistory = getHistory() || []; // Fix: Fallback to [] if null/undefined (prevents .sort TypeError)
+    setHistory(rawHistory.sort((a, b) => b.timestamp - a.timestamp));
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -21,6 +24,17 @@ export default function HistoryPage() {
     setHistory([]);
     setShowDeleteModal(false);
   };
+
+  if (loading) {
+    return (
+      <div className="container mx-auto p-6 max-w-5xl">
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+          <span className="ml-2 text-gray-500">Loading history...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto p-6 max-w-5xl">
