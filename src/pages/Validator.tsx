@@ -90,38 +90,15 @@ export default function Validator() {
 
       setResult(parsed);
 
-      // Local save (optimistic)
+      // Local + DB save (optimistic local, pass user_id to history for DB)
       if (parsed.verdict) {
+        const { data: { user } } = await supabase.auth.getUser();
         await saveToHistory({
           claim,
           verdict: parsed.verdict,
           score: parsed.score,
           mode,
-        });
-      }
-
-      // DB Insert (async, user-specific)
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user && parsed.verdict) {
-        console.log('Inserting with user_id:', user.id); // New: Debug RLS match
-
-        const insertData = {
-          user_id: user.id,
-          claim,
-          verdict: parsed.verdict,
-          score: parsed.score,
-          mode,
-          explanation: parsed.explanation || null,
-          riskAssessment: parsed.riskAssessment || null,
-          sources: parsed.sources || null,
-          sentiment: parsed.sentiment || null,
-        };
-
-        const { error } = await supabase
-          .from('validation_history')
-          .insert(insertData);
-
-        if (error) console.warn('DB save failed:', error.message); // Fallback to local; no UI block
+        }, user?.id); // New: Pass user_id to history.ts
       }
     } catch (error) {
       console.error('Validation failed:', error);
@@ -177,7 +154,7 @@ export default function Validator() {
               {result.verdict === 'bullshit' ? '🛑 Bullshit' : result.verdict === 'mostly true' ? '✅ Mostly True' : '⚖️ Neutral'}
             </span>
             <div className="ml-4 inline-block">
-              <div className="w-64 h-4 bg-gray-200 bg-gray-200 rounded-full overflow-hidden">
+              <div className="w-64 h-4 bg-gray-200 rounded-full overflow-hidden">
                 <div className={`h-full ${
                   result.score > 0.7 ? 'bg-red-500' : result.score > 0.4 ? 'bg-yellow-500' : 'bg-green-500'
                 }`} style={{ width: `${result.score * 100}%` }}></div>
