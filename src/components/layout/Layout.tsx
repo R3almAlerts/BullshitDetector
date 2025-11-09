@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Outlet, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Menu, X, User, Settings, LogOut, AlertCircle, History, Users, Home } from 'lucide-react'; // Add Users for admin menu
+import { Menu, X, User, Settings, LogOut, AlertCircle, History, Users, Home } from 'lucide-react';
 
 interface MenuItem {
   label: string;
@@ -21,6 +21,12 @@ const Layout: React.FC = () => {
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   const isAboutPage = location.pathname === '/';
+
+  // Redirect logged out to / if on protected path
+  if (!user && location.pathname !== '/' && location.pathname !== '/auth') {
+    navigate('/', { replace: true });
+    return null;
+  }
 
   // Outside click detection for closing menus
   useEffect(() => {
@@ -57,13 +63,13 @@ const Layout: React.FC = () => {
 
   const userMenuItems: MenuItem[] = [
     { label: 'Profile', path: '/profile', icon: User },
-    ...(role === 'admin' ? [{ label: 'Users', path: '/users', icon: Users }] : []), // Users icon now defined
+    ...(role === 'admin' ? [{ label: 'Users', path: '/users', icon: Users }] : []),
     { label: 'Settings', path: '/settings', icon: Settings },
     { label: 'Logout', onClick: handleLogout, icon: LogOut },
   ];
 
+  // Simplified Top Bar for About (logged out only)
   if (isAboutPage && !user) {
-    // Simplified Top Bar for About (no user, no full menu)
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <nav className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
@@ -115,8 +121,13 @@ const Layout: React.FC = () => {
                 <Link
                   key={item.label}
                   to={item.path || '#'}
-                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  className={`flex items-center gap-2 px-3 py-2 text-sm font-medium ${
+                    location.pathname === item.path 
+                      ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20' 
+                      : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20'
+                  } rounded-md transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2`}
                   aria-label={item.label}
+                  aria-current={location.pathname === item.path ? 'page' : undefined}
                 >
                   <item.icon className="h-4 w-4" />
                   {item.label}
