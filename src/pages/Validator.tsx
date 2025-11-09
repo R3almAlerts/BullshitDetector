@@ -2,7 +2,6 @@
 import { useState, useMemo } from 'react';
 import { useModel } from '../contexts/ModelContext';
 import { useUserMode } from '../contexts/UserModeContext';
-import { useAuth } from '../contexts/AuthContext'; // Fix: Use context for user (logged in session)
 import { saveToHistory } from '../lib/history';
 import { supabase } from '../lib/supabase';
 import { AlertCircle } from 'lucide-react';
@@ -24,7 +23,6 @@ export default function Validator() {
 
   const { apiKey, model } = useModel();
   const { mode } = useUserMode();
-  const { user } = useAuth(); // Fix: Get user from context (no getUser timing issue)
 
   const analyze = async () => {
     if (!claim.trim()) return;
@@ -92,14 +90,17 @@ export default function Validator() {
 
       setResult(parsed);
 
-      // Local + DB save (optimistic local, pass user_id from context to history for DB)
+      // Get user for DB save (fresh at insert time)
+      const { data: { user } } = await supabase.auth.getUser();
+
+      // Local + DB save (optimistic local, pass user_id to history for DB)
       if (parsed.verdict) {
         await saveToHistory({
           claim,
           verdict: parsed.verdict,
           score: parsed.score,
           mode,
-        }, user?.id); // Pass user_id from context (no null violation)
+        }, user?.id); // Pass user_id from fresh getUser (no null violation)
       }
     } catch (error) {
       console.error('Validation failed:', error);
