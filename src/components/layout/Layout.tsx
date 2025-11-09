@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Outlet, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Menu, X, User, Settings, LogOut, AlertCircle, History, Home } from 'lucide-react';
+import { Menu, X, User, Settings, LogOut, AlertCircle, History, Users, Home } from 'lucide-react'; // Add Users for admin menu
 
 interface MenuItem {
   label: string;
@@ -47,7 +47,7 @@ const Layout: React.FC = () => {
     }
   };
 
-  // Top menu: About, Validator, Sentiment, History
+  // Menu items (responsive: full on desktop, collapsed on mobile)
   const navItems: MenuItem[] = [
     { label: 'About', path: '/', icon: Home },
     { label: 'Validator', path: '/validator', icon: AlertCircle },
@@ -57,13 +57,13 @@ const Layout: React.FC = () => {
 
   const userMenuItems: MenuItem[] = [
     { label: 'Profile', path: '/profile', icon: User },
-    ...(role === 'admin' ? [{ label: 'Users', path: '/users', icon: Users }] : []),
+    ...(role === 'admin' ? [{ label: 'Users', path: '/users', icon: Users }] : []), // Users icon now defined
     { label: 'Settings', path: '/settings', icon: Settings },
     { label: 'Logout', onClick: handleLogout, icon: LogOut },
   ];
 
-  // Simplified Top Bar for About (no user or on /)
-  if (isAboutPage || !user) {
+  if (isAboutPage && !user) {
+    // Simplified Top Bar for About (no user, no full menu)
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <nav className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
@@ -81,14 +81,12 @@ const Layout: React.FC = () => {
                 >
                   View Demo
                 </Link>
-                {!user && (
-                  <Link
-                    to="/auth"
-                    className="px-4 py-2 bg-purple-600 text-white rounded-md font-semibold hover:bg-purple-700 transition-colors"
-                  >
-                    Sign Up
-                  </Link>
-                )}
+                <Link
+                  to="/auth"
+                  className="px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+                >
+                  Sign Up
+                </Link>
               </div>
             </div>
           </div>
@@ -127,49 +125,51 @@ const Layout: React.FC = () => {
             </div>
 
             {/* User Menu (Desktop) */}
-            <div ref={userMenuRef} className="relative ml-4">
-              <button
-                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                aria-label="User menu"
-                aria-expanded={isUserMenuOpen}
-              >
-                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                  {user.email?.charAt(0).toUpperCase() || 'U'}
-                </div>
-                <span className="hidden sm:inline">{role?.toUpperCase()}</span>
-              </button>
-              {/* User Dropdown */}
-              {isUserMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50">
-                  <ul className="py-1">
-                    {userMenuItems.map((item, index) => (
-                      <li key={index}>
-                        {item.path ? (
-                          <Link
-                            to={item.path}
-                            className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition w-full text-left"
-                            onClick={() => setIsUserMenuOpen(false)}
-                          >
-                            <item.icon className="h-4 w-4 mr-3" />
-                            {item.label}
-                          </Link>
-                        ) : (
-                          <button
-                            onClick={item.onClick}
-                            className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition w-full text-left"
-                            aria-label={item.label}
-                          >
-                            <item.icon className="h-4 w-4 mr-3" />
-                            {item.label}
-                          </button>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
+            {user && (
+              <div ref={userMenuRef} className="relative ml-4">
+                <button
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  aria-label="User menu"
+                  aria-expanded={isUserMenuOpen}
+                >
+                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                    {user.email?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                  <span className="hidden sm:inline">{role?.toUpperCase()}</span>
+                </button>
+                {/* User Dropdown */}
+                {isUserMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50">
+                    <ul className="py-1">
+                      {userMenuItems.map((item, index) => (
+                        <li key={index}>
+                          {item.path ? (
+                            <Link
+                              to={item.path}
+                              className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition w-full text-left"
+                              onClick={() => setIsUserMenuOpen(false)}
+                            >
+                              <item.icon className="h-4 w-4 mr-3" />
+                              {item.label}
+                            </Link>
+                          ) : (
+                            <button
+                              onClick={item.onClick}
+                              className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition w-full text-left"
+                              aria-label={item.label}
+                            >
+                              <item.icon className="h-4 w-4 mr-3" />
+                              {item.label}
+                            </button>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Mobile Menu Toggle */}
             <div className="md:hidden flex items-center">
@@ -213,7 +213,7 @@ const Layout: React.FC = () => {
                         className="flex items-center px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition mt-1 block"
                         onClick={() => setIsMenuOpen(false)}
                       >
-                        <item.icon className="h-5 w-5 mr-3" />
+                        <item.icon className="h-4 w-4 mr-3" />
                         {item.label}
                       </Link>
                     ))}
