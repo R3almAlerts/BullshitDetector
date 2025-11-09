@@ -85,7 +85,7 @@ const AboutPage: React.FC = () => {
               to="/auth"
               className="px-8 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
             >
-              Sign Up Free
+              Get Started
             </Link>
             <Link
               to="/sentiment"
