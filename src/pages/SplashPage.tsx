@@ -32,7 +32,7 @@ export default function SplashPage() {
           <div className="mx-auto h-16 w-16 bg-blue-600 rounded-full flex items-center justify-center mb-4">
             <Mail className="h-8 w-8 text-white" />
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Welcome to R3almWeb</h2>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Welcome to Validator</h2>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
             Sign in to access your dashboard and tools.
           </p>
@@ -90,16 +90,16 @@ export default function SplashPage() {
           <Link
             to="/"
             className="inline-flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md p-2"
-            aria-label="Learn more about R3almWeb"
+            aria-label="Learn more about Validator"
           >
             <User className="w-4 h-4" />
-            About R3almWeb
+            About Validator
           </Link>
         </div>
 
         {/* Footer */}
         <div className="text-center text-xs text-gray-500 dark:text-gray-400">
-          <p>&copy; 2025 R3almWeb. All rights reserved.</p>
+          <p>&copy; 2025 Validator. All rights reserved.</p>
         </div>
       </div>
     </div>
