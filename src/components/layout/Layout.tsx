@@ -1,6 +1,6 @@
 // src/components/layout/Layout.tsx
 import React, { useState, useRef, useEffect } from 'react';
-import { Outlet, useNavigate, Link, useLocation } from 'react-router-dom'; // Add useLocation for path check
+import { Outlet, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { Menu, X, User, Settings, LogOut, AlertCircle, History, Users, Home } from 'lucide-react';
 
@@ -13,14 +13,13 @@ interface MenuItem {
 
 const Layout: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation(); // New: For path check (skip menu on /)
+  const location = useLocation();
   const { user, role, signOut } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
-  // Skip menu on About page (/)
   const isAboutPage = location.pathname === '/';
 
   // Outside click detection for closing menus
@@ -50,7 +49,7 @@ const Layout: React.FC = () => {
 
   // Menu items (responsive: full on desktop, collapsed on mobile)
   const navItems: MenuItem[] = [
-    { label: 'About', path: '/', icon: Home }, // About link (bypass Layout on click)
+    { label: 'About', path: '/', icon: Home },
     { label: 'Validator', path: '/validator', icon: AlertCircle },
     { label: 'Sentiment', path: '/sentiment', icon: User },
     { label: 'History', path: '/history', icon: History },
@@ -63,8 +62,40 @@ const Layout: React.FC = () => {
     { label: 'Logout', onClick: handleLogout, icon: LogOut },
   ];
 
-  if (isAboutPage) {
-    return <Outlet />; // Bypass menu on About (clean landing)
+  // Simplified Top Bar for About (no user or on /)
+  if (isAboutPage || !user) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <nav className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              <div className="flex items-center">
+                <Link to="/" className="text-xl font-bold text-gray-900 dark:text-white hover:text-blue-600 transition-colors">
+                  Bullshit Detector
+                </Link>
+              </div>
+              <div className="flex items-center space-x-4">
+                <Link
+                  to="/sentiment"
+                  className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 transition-colors"
+                >
+                  View Demo
+                </Link>
+                {!user && (
+                  <Link
+                    to="/auth"
+                    className="px-4 py-2 bg-purple-600 text-white rounded-md font-semibold hover:bg-purple-700 transition-colors"
+                  >
+                    Sign Up
+                  </Link>
+                )}
+              </div>
+            </div>
+          </div>
+        </nav>
+        <Outlet />
+      </div>
+    );
   }
 
   return (
@@ -96,51 +127,49 @@ const Layout: React.FC = () => {
             </div>
 
             {/* User Menu (Desktop) */}
-            {user && (
-              <div ref={userMenuRef} className="relative ml-4">
-                <button
-                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                  aria-label="User menu"
-                  aria-expanded={isUserMenuOpen}
-                >
-                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                    {user.email?.charAt(0).toUpperCase() || 'U'}
-                  </div>
-                  <span className="hidden sm:inline">{role?.toUpperCase()}</span>
-                </button>
-                {/* User Dropdown */}
-                {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50">
-                    <ul className="py-1">
-                      {userMenuItems.map((item, index) => (
-                        <li key={index}>
-                          {item.path ? (
-                            <Link
-                              to={item.path}
-                              className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition w-full text-left"
-                              onClick={() => setIsUserMenuOpen(false)}
-                            >
-                              <item.icon className="h-4 w-4 mr-3" />
-                              {item.label}
-                            </Link>
-                          ) : (
-                            <button
-                              onClick={item.onClick}
-                              className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition w-full text-left"
-                              aria-label={item.label}
-                            >
-                              <item.icon className="h-4 w-4 mr-3" />
-                              {item.label}
-                            </button>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            )}
+            <div ref={userMenuRef} className="relative ml-4">
+              <button
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                aria-label="User menu"
+                aria-expanded={isUserMenuOpen}
+              >
+                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
+                  {user.email?.charAt(0).toUpperCase() || 'U'}
+                </div>
+                <span className="hidden sm:inline">{role?.toUpperCase()}</span>
+              </button>
+              {/* User Dropdown */}
+              {isUserMenuOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50">
+                  <ul className="py-1">
+                    {userMenuItems.map((item, index) => (
+                      <li key={index}>
+                        {item.path ? (
+                          <Link
+                            to={item.path}
+                            className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition w-full text-left"
+                            onClick={() => setIsUserMenuOpen(false)}
+                          >
+                            <item.icon className="h-4 w-4 mr-3" />
+                            {item.label}
+                          </Link>
+                        ) : (
+                          <button
+                            onClick={item.onClick}
+                            className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition w-full text-left"
+                            aria-label={item.label}
+                          >
+                            <item.icon className="h-4 w-4 mr-3" />
+                            {item.label}
+                          </button>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
 
             {/* Mobile Menu Toggle */}
             <div className="md:hidden flex items-center">
