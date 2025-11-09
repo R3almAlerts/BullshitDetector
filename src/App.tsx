@@ -12,7 +12,7 @@ import { OnboardingModal } from './components/OnboardingModal';
 import { useApp } from './contexts/AppContext';
 import { useUserMode } from './contexts/UserModeContext';
 import { useAuth } from './contexts/AuthContext';
-import { ErrorBoundary } from './components/ErrorBoundary'; // New: Global error handler
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 // Lazy-loaded pages (perf)
 const HomePage = React.lazy(() => import('./pages/HomePage'));
@@ -53,18 +53,18 @@ function AppContent() {
         <Routes>
           <Route element={<Layout />}>
             <Route index element={<AboutPage />} />
-            <Route path="/analyzer" element={<AnalyzerRoute />} />
-            <Route path="/sentiment" element={<SentimentPage />} />
-            <Route path="/sentiment/:type" element={<SentimentDetail />} />
-            <Route path="/history" element={<HistoryPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/auth" element={<AuthPage />} /> {/* Auth outside Layout for no-nav */}
+            <Route path="/analyzer" element={<ProtectedRoute><AnalyzerRoute /></ProtectedRoute>} />
+            <Route path="/sentiment" element={<ProtectedRoute><SentimentPage /></ProtectedRoute>} />
+            <Route path="/sentiment/:type" element={<ProtectedRoute><SentimentDetail /></ProtectedRoute>} />
+            <Route path="/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
             {isAdmin && <Route path="/users" element={<ProtectedRoute><UsersPage /></ProtectedRoute>} />}
             {isAdmin && <Route path="/admin/config" element={<ProtectedRoute><AdminConfigPage /></ProtectedRoute>} />}
             <Route path="/about" element={<AboutPage />} />
             <Route path="/search" element={<div>Search Results (TBD)</div>} />
           </Route>
-          <Route path="/auth" element={<AuthPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         <Suspense fallback={<div className="flex justify-center py-8">Loading...</div>}>
