@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Outlet, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Menu, X, User, Settings, LogOut, AlertCircle, History, Users } from 'lucide-react'; // Icons for nav/menu
+import { Menu, X, User, Settings, LogOut, AlertCircle, History, Users, Home } from 'lucide-react'; // Add Home for About
 
 interface MenuItem {
   label: string;
@@ -13,7 +13,7 @@ interface MenuItem {
 
 const Layout: React.FC = () => {
   const navigate = useNavigate();
-  const { user, role, signOut } = useAuth(); // Destructure signOut to fix ReferenceError
+  const { user, role, signOut } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -46,8 +46,9 @@ const Layout: React.FC = () => {
 
   // Menu items (responsive: full on desktop, collapsed on mobile)
   const navItems: MenuItem[] = [
+    { label: 'About', path: '/', icon: Home }, // New: About as first item (landing)
     { label: 'Validator', path: '/validator', icon: AlertCircle },
-    { label: 'Sentiment', path: '/sentiment', icon: User }, // Sub-items for detail if needed
+    { label: 'Sentiment', path: '/sentiment', icon: User },
     { label: 'History', path: '/history', icon: History },
   ];
 
@@ -55,7 +56,7 @@ const Layout: React.FC = () => {
     { label: 'Profile', path: '/profile', icon: User },
     ...(role === 'admin' ? [{ label: 'Users', path: '/users', icon: Users }] : []),
     { label: 'Settings', path: '/settings', icon: Settings },
-    { label: 'Logout', onClick: handleLogout, icon: LogOut }, // Note: onClick instead of path
+    { label: 'Logout', onClick: handleLogout, icon: LogOut },
   ];
 
   return (
@@ -168,19 +169,17 @@ const Layout: React.FC = () => {
                 <li className="-mx-4 mt-2 border-t border-gray-200 dark:border-gray-700">
                   <div className="px-4 py-2">
                     <p className="text-sm text-gray-500 dark:text-gray-400">Logged in as {role}</p>
-                    {userMenuItems.slice(0, -1).map((item, index) => { // Exclude Logout for separate; explicit {} body for parse fix
-                      return (
-                        <Link
-                          key={index}
-                          to={item.path || '#'}
-                          className="flex items-center px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition mt-1 block"
-                          onClick={() => setIsMenuOpen(false)}
-                        >
-                          <item.icon className="h-5 w-5 mr-3" />
-                          {item.label}
-                        </Link>
-                      );
-                    })}
+                    {userMenuItems.slice(0, -1).map((item, index) => (
+                      <Link
+                        key={index}
+                        to={item.path || '#'}
+                        className="flex items-center px-3 py-2 text-base font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md transition mt-1 block"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        <item.icon className="h-5 w-5 mr-3" />
+                        {item.label}
+                      </Link>
+                    ))}
                     <button
                       onClick={handleLogout}
                       className="flex items-center px-3 py-2 text-base font-medium text-red-600 dark:text-red-400 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition mt-1 w-full text-left"
