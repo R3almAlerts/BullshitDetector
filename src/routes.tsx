@@ -23,12 +23,13 @@ function ProtectedRoute({ children }: { children: JSX.Element }) {
 export default function AppRoutes() {
   return (
     <Routes>
-      {/* Public */}
+      {/* Public Routes */}
       <Route path="/" element={<AboutPage />} />
       <Route path="/splash" element={<SplashPage />} />
 
-      {/* Protected App */}
+      {/* Protected App with Layout */}
       <Route element={<Layout />}>
+        {/* Default protected route */}
         <Route
           index
           element={
@@ -45,6 +46,7 @@ export default function AppRoutes() {
         <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
       </Route>
 
+      {/* Catch-all: redirect to splash if not found */}
       <Route path="*" element={<Navigate to="/splash" replace />} />
     </Routes>
   );

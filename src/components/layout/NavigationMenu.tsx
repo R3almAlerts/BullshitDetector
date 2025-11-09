@@ -1,6 +1,6 @@
 // src/components/layout/NavigationMenu.tsx
 import { Link, useLocation } from 'react-router-dom';
-import { Home, BarChart3, History, Settings, User, Search } from 'lucide-react';
+import { Home, BarChart3, History, Settings, User, Search, Menu, X } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 
 interface NavItem {
@@ -22,66 +22,77 @@ export default function NavigationMenu() {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  // Hide nav on public pages
-  const isPublicPage = ['/', '/splash'].includes(location.pathname);
-  if (isPublicPage && location.pathname !== '/') return null;
-
-  // Close mobile menu on click outside
+  // Close mobile menu on outside click
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (mobileMenuRef.current && !mobileMenuRef.current.contains(e.target as Node)) {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setMobileOpen(false);
       }
-    }
+    };
     if (mobileOpen) {
       document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
     }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [mobileOpen]);
 
+  // Always render — visibility controlled by Layout
   return (
-    <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+    <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
 
+          {/* Logo / Brand */}
+          <div className="flex items-center">
+            <Link to="/" className="flex items-center gap-2 text-xl font-bold text-blue-600 dark:text-blue-400">
+              <Home className="w-6 h-6" />
+              R3almWeb
+            </Link>
+          </div>
+
           {/* Desktop Menu */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center space-x-1">
             {navItems.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md transition-colors
+                className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-all
                   ${location.pathname === item.path
-                    ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
-                    : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-800'
+                    ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 font-semibold'
+                    : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-800'
                   }`}
               >
                 {item.icon}
-                {item.label}
+                <span>{item.label}</span>
               </Link>
             ))}
           </div>
 
-          {/* Search & Profile (Desktop) */}
-          <div className="hidden md:flex items-center gap-4">
-            <button
-              onClick={() => setSearchOpen(!searchOpen)}
-              className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
-              aria-label="Search"
-            >
-              <Search className="w-5 h-5" />
+          {/* Desktop Right: Search + Avatar */}
+          <div className="hidden md:flex items-center gap-3">
+            <div className="relative">
+              {searchOpen ? (
+                <input
+                  type="text"
+                  placeholder="Search..."
+                  autoFocus
+                  className="w-64 px-3 py-1.5 text-sm border rounded-lg dark:bg-gray-800 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onBlur={() => setSearchOpen(false)}
+                />
+              ) : (
+                <button
+                  onClick={() => setSearchOpen(true)}
+                  className="p-2 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
+                  aria-label="Search"
+                >
+                  <Search className="w-5 h-5" />
+                </button>
+              )}
+            </div>
+            <button className="w-9 h-9 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-medium text-sm">
+              U
             </button>
-            {searchOpen && (
-              <input
-                type="text"
-                placeholder="Search..."
-                className="px-3 py-1 text-sm border rounded-md dark:bg-gray-800 dark:border-gray-700"
-                autoFocus
-              />
-            )}
-            <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full" />
           </div>
 
           {/* Mobile Hamburger */}
@@ -91,9 +102,7 @@ export default function NavigationMenu() {
               className="p-2 text-gray-700 dark:text-gray-300"
               aria-label="Toggle menu"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={mobileOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
-              </svg>
+              {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
         </div>
@@ -101,24 +110,24 @@ export default function NavigationMenu() {
 
       {/* Mobile Menu */}
       {mobileOpen && (
-        <div ref={mobileMenuRef} className="md:hidden bg-white dark:bg-gray-900 border-t dark:border-gray-700">
+        <div ref={menuRef} className="md:hidden bg-white dark:bg-gray-900 border-t dark:border-gray-700">
           <div className="px-4 py-3 space-y-1">
             {navItems.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
                 onClick={() => setMobileOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2 text-base font-medium rounded-md
+                className={`flex items-center gap-3 px-3 py-2.5 text-base font-medium rounded-md transition-colors
                   ${location.pathname === item.path
-                    ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
-                    : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400'
+                    ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30'
+                    : 'text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-800'
                   }`}
               >
                 {item.icon}
                 {item.label}
               </Link>
             ))}
-            <div className="pt-4 border-t dark:border-gray-700">
+            <div className="pt-3 border-t dark:border-gray-700">
               <input
                 type="text"
                 placeholder="Search..."
