@@ -1,7 +1,7 @@
 // src/routes.tsx
 import { Routes, Route, Navigate } from 'react-router-dom';
-import AboutPage from './pages/AboutPage'; // Landing (public)
-import SplashPage from './pages/SplashPage'; // Login screen for unauthenticated users
+import AboutPage from './pages/AboutPage';
+import SplashPage from './pages/SplashPage';
 import SentimentPage from './pages/SentimentPage';
 import SentimentDetail from './pages/SentimentDetail';
 import HistoryPage from './pages/HistoryPage';
@@ -11,7 +11,6 @@ import Validator from './pages/Validator';
 import Layout from './components/layout/Layout';
 import { useProtected } from './contexts/AuthContext';
 
-// Protected route guard — redirects to /splash if not authenticated
 function ProtectedRoute({ children }: { children: JSX.Element }) {
   try {
     useProtected();
@@ -24,11 +23,11 @@ function ProtectedRoute({ children }: { children: JSX.Element }) {
 export default function AppRoutes() {
   return (
     <Routes>
-      {/* Public Routes */}
+      {/* Public */}
       <Route path="/" element={<AboutPage />} />
       <Route path="/splash" element={<SplashPage />} />
 
-      {/* Protected Layout with Nested Routes */}
+      {/* Protected App */}
       <Route element={<Layout />}>
         <Route
           index
@@ -38,57 +37,14 @@ export default function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/validator"
-          element={
-            <ProtectedRoute>
-              <Validator />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/sentiment"
-          element={
-            <ProtectedRoute>
-              <SentimentPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/sentiment/:type"
-          element={
-            <ProtectedRoute>
-              <SentimentDetail />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/history"
-          element={
-            <ProtectedRoute>
-              <HistoryPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <ProtectedRoute>
-              <SettingsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <ProfilePage />
-            </ProtectedRoute>
-          }
-        />
+        <Route path="/validator" element={<ProtectedRoute><Validator /></ProtectedRoute>} />
+        <Route path="/sentiment" element={<ProtectedRoute><SentimentPage /></ProtectedRoute>} />
+        <Route path="/sentiment/:type" element={<ProtectedRoute><SentimentDetail /></ProtectedRoute>} />
+        <Route path="/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
       </Route>
 
-      {/* Redirect root to splash if not logged in (fallback) */}
       <Route path="*" element={<Navigate to="/splash" replace />} />
     </Routes>
   );
