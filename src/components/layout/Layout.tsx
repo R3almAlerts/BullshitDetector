@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Outlet, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Menu, X, User, Settings, LogOut, AlertCircle, History, Users, Home } from 'lucide-react';
+import { Menu, X, User, Settings, LogOut, AlertCircle, History, Home } from 'lucide-react';
 
 interface MenuItem {
   label: string;
@@ -47,7 +47,7 @@ const Layout: React.FC = () => {
     }
   };
 
-  // Menu items (responsive: full on desktop, collapsed on mobile)
+  // Top menu: About, Validator, Sentiment, History
   const navItems: MenuItem[] = [
     { label: 'About', path: '/', icon: Home },
     { label: 'Validator', path: '/validator', icon: AlertCircle },
