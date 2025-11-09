@@ -23,30 +23,64 @@ function ProtectedRoute({ children }: { children: JSX.Element }) {
 export default function AppRoutes() {
   return (
     <Routes>
-      {/* Public Routes */}
-      <Route path="/" element={<AboutPage />} />
-      <Route path="/splash" element={<SplashPage />} />
-
-      {/* Protected App with Layout */}
+      {/* All routes nested under Layout for consistent navigation */}
       <Route element={<Layout />}>
-        {/* Default protected route */}
+        {/* Public landing: AboutPage with nav */}
+        <Route path="/" element={<AboutPage />} />
+        {/* Login screen: SplashPage (nav hidden via Layout logic) */}
+        <Route path="/splash" element={<SplashPage />} />
+        {/* Protected routes */}
         <Route
-          index
+          path="/validator"
           element={
             <ProtectedRoute>
               <Validator />
             </ProtectedRoute>
           }
         />
-        <Route path="/validator" element={<ProtectedRoute><Validator /></ProtectedRoute>} />
-        <Route path="/sentiment" element={<ProtectedRoute><SentimentPage /></ProtectedRoute>} />
-        <Route path="/sentiment/:type" element={<ProtectedRoute><SentimentDetail /></ProtectedRoute>} />
-        <Route path="/history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
-        <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+        <Route
+          path="/sentiment"
+          element={
+            <ProtectedRoute>
+              <SentimentPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/sentiment/:type"
+          element={
+            <ProtectedRoute>
+              <SentimentDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/history"
+          element={
+            <ProtectedRoute>
+              <HistoryPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <SettingsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
       </Route>
 
-      {/* Catch-all: redirect to splash if not found */}
+      {/* Catch-all: redirect to splash for unknown paths */}
       <Route path="*" element={<Navigate to="/splash" replace />} />
     </Routes>
   );
