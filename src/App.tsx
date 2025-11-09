@@ -48,7 +48,7 @@ function AppContent() {
   const { isAdmin } = useAuth();
 
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <ErrorBoundary>
         <Routes>
           <Route element={<Layout />}>
