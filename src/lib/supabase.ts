@@ -1,44 +1,43 @@
 // src/lib/supabase.ts
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL!;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY!;
 
-// Env validation (enhanced from v0.1.8)
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    'Missing Supabase env vars. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to .env.local.'
-  );
-}
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
-  },
-});
-
-// Timeout wrapper for auth/API calls (from v0.1.8, generalized)
-export const withTimeout = async (promise: Promise<any>, ms: number = 10000) => {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), ms);
-  try {
-    const result = await promise;
-    clearTimeout(timeoutId);
-    return result;
-  } catch (error) {
-    clearTimeout(timeoutId);
-    if (error.name === 'AbortError') {
-      throw new Error(`Request timed out after ${ms}ms. Check connection.`);
-    }
-    throw error;
-  }
+// Utils: Timeout wrapper (optional, removed from Auth if not needed)
+export const withTimeout = async <T>(promise: Promise<T>, ms: number): Promise<T> => {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`Timeout after ${ms}ms`)), ms)
+    ),
+  ]);
 };
 
-// RPC util for secure user delete (admin-only)
-export const deleteUser = async (userId: string) => {
-  const { data, error } = await supabase.rpc('delete_user', { user_id: userId });
+// History utils (for Validator/Sentiment saves)
+export const saveToHistory = async (data: any, userId?: string) => {
+  if (!userId) {
+    localStorage.setItem('history', JSON.stringify([...(JSON.parse(localStorage.getItem('history') || '[]')), { ...data, timestamp: Date.now() }]));
+    return;
+  }
+  const table = data.topic ? 'sentiment_history' : 'validation_history';
+  const { error } = await supabase.from(table).insert({ user_id: userId, ...data });
   if (error) throw error;
-  return data;
+};
+
+export const getHistory = (table = 'validation_history') => {
+  const local = JSON.parse(localStorage.getItem('history') || '[]');
+  // Sync from DB if user
+  // (Implement in pages as needed)
+  return local;
+};
+
+export const clearHistory = async (userId?: string) => {
+  if (userId) {
+    await supabase.from('validation_history').delete().eq('user_id', userId);
+    await supabase.from('sentiment_history').delete().eq('user_id', userId);
+  }
+  localStorage.removeItem('history');
 };
