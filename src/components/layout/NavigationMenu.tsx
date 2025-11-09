@@ -47,7 +47,7 @@ export default function NavigationMenu() {
           <div className="flex items-center">
             <Link to="/" className="flex items-center gap-2 text-xl font-bold text-blue-600 dark:text-blue-400">
               <Home className="w-6 h-6" />
-              R3almWeb
+              Validator
             </Link>
           </div>
 
