@@ -1,6 +1,6 @@
 // src/routes.tsx
 import { Routes, Route, Navigate } from 'react-router-dom';
-import AboutPage from './pages/AboutPage'; // New: Import for landing
+import AboutPage from './pages/AboutPage'; // Landing
 import SplashPage from './pages/SplashPage'; // Legacy
 import SentimentPage from './pages/SentimentPage';
 import SentimentDetail from './pages/SentimentDetail';
@@ -19,17 +19,17 @@ function AdminRoute({ children }: { children: JSX.Element }) {
     useProtected();
     return children;
   } catch {
-    return <Navigate to="/about" replace />;
+    return <Navigate to="/" replace />;
   }
 }
 
 export default function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<AboutPage />} /> {/* New: About as landing */}
-      <Route path="/splash" element={<SplashPage />} /> {/* Legacy splash */}
+      <Route path="/" element={<AboutPage />} /> {/* Unprotected landing - About */}
+      <Route path="/splash" element={<SplashPage />} /> {/* Legacy */}
       <Route element={<Layout />}>
-        <Route index element={<Validator />} />
+        <Route index element={<Validator />} /> {/* Protected default to Validator */}
         <Route path="/validator" element={<Validator />} />
         <Route path="/sentiment" element={<SentimentPage />} />
         <Route path="/sentiment/:type" element={<SentimentDetail />} />

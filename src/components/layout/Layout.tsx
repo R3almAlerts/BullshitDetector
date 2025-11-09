@@ -1,8 +1,8 @@
 // src/components/layout/Layout.tsx
 import React, { useState, useRef, useEffect } from 'react';
-import { Outlet, useNavigate, Link } from 'react-router-dom';
+import { Outlet, useNavigate, Link, useLocation } from 'react-router-dom'; // Add useLocation for path check
 import { useAuth } from '../../contexts/AuthContext';
-import { Menu, X, User, Settings, LogOut, AlertCircle, History, Users, Home } from 'lucide-react'; // Add Home for About
+import { Menu, X, User, Settings, LogOut, AlertCircle, History, Users, Home } from 'lucide-react';
 
 interface MenuItem {
   label: string;
@@ -13,11 +13,15 @@ interface MenuItem {
 
 const Layout: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation(); // New: For path check (skip menu on /)
   const { user, role, signOut } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Skip menu on About page (/)
+  const isAboutPage = location.pathname === '/';
 
   // Outside click detection for closing menus
   useEffect(() => {
@@ -46,7 +50,7 @@ const Layout: React.FC = () => {
 
   // Menu items (responsive: full on desktop, collapsed on mobile)
   const navItems: MenuItem[] = [
-    { label: 'About', path: '/', icon: Home }, // New: About as first item (landing)
+    { label: 'About', path: '/', icon: Home }, // About link (bypass Layout on click)
     { label: 'Validator', path: '/validator', icon: AlertCircle },
     { label: 'Sentiment', path: '/sentiment', icon: User },
     { label: 'History', path: '/history', icon: History },
@@ -58,6 +62,10 @@ const Layout: React.FC = () => {
     { label: 'Settings', path: '/settings', icon: Settings },
     { label: 'Logout', onClick: handleLogout, icon: LogOut },
   ];
+
+  if (isAboutPage) {
+    return <Outlet />; // Bypass menu on About (clean landing)
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
