@@ -1,97 +1,106 @@
 // src/pages/SplashPage.tsx
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { Button } from '../components/ui/button'; // Assume shadcn/ui or Tailwind equiv; fallback to <button>
+import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Mail, Lock, User } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext'; // Assuming AuthContext provides login hook
 
 export default function SplashPage() {
-  const navigate = useNavigate();
-  const { signIn, loading, error: authError } = useAuth(); // Use context error for fallback
-  const [demoError, setDemoError] = useState<string | null>(null); // Specific demo error state
-  const [retryCount, setRetryCount] = useState(0); // For retry UX
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuth(); // Hook for login; adjust if different
 
-  const handleDemoLogin = async () => {
-    setDemoError(null);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
     try {
-      await signIn('admin@r3alm.com', 'admin123'); // Repo demo creds
-      navigate('/sentiment', { replace: true });
-    } catch (err: any) {
-      const msg = err.message || 'Unknown error';
-      console.error('Demo login failed:', err); // Log for dev
-      setDemoError(msg.includes('Invalid login') ? 'Invalid credentials—check password hash in Supabase.' :
-                    msg.includes('confirm') ? 'Email not confirmed—disable in Auth Settings.' :
-                    msg.includes('network') ? 'Network issue—check connection.' :
-                    `Login failed: ${msg}. Ensure admin@r3alm.com exists with role: 'admin'.`);
-      setRetryCount(prev => prev + 1);
+      await login(email, password);
+      // Redirect handled by AuthContext or router
+    } catch (error) {
+      console.error('Login failed:', error);
+      // Add toast/error UI here if needed
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleRetry = () => {
-    setDemoError(null);
-    handleDemoLogin();
-  };
-
-  const handleSignUp = () => navigate('/auth?mode=signup');
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
-        <div className="text-center">Loading...</div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 p-4">
-      <div className="text-center max-w-md w-full">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
-          Bullshit Detector
-        </h1>
-        <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">
-          Detect spin and nonsense with AI precision.
-        </p>
-        <div className="space-y-4">
-          <Button
-            onClick={handleDemoLogin}
-            disabled={loading}
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 font-semibold rounded-lg transition"
-            aria-label="Login as demo admin for quick access"
-          >
-            {loading ? 'Logging in...' : 'Demo Admin Login (admin@r3alm.com)'}
-          </Button>
-          <Button
-            variant="outline"
-            onClick={handleSignUp}
-            className="w-full border-2 border-purple-600 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 py-3 font-semibold rounded-lg transition"
-          >
-            Sign Up / Login
-          </Button>
-        </div>
-        {demoError && (
-          <div 
-            role="alert" 
-            aria-live="polite"
-            className="mt-4 p-4 bg-red-100 dark:bg-red-900/20 border border-red-400 dark:border-red-800 rounded-lg text-red-700 dark:text-red-300 text-sm"
-          >
-            <div className="font-medium mb-1">{demoError}</div>
-            {retryCount < 3 && (
-              <button
-                onClick={handleRetry}
-                className="text-red-600 hover:underline text-xs font-medium"
-                aria-label="Retry demo login"
-              >
-                Retry ({3 - retryCount} attempts left)
-              </button>
-            )}
-            {retryCount >= 3 && <div className="text-xs mt-1">Contact support or check console.</div>}
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 px-4 py-8">
+      <div className="max-w-md w-full space-y-8">
+        {/* Branding */}
+        <div className="text-center">
+          <div className="mx-auto h-16 w-16 bg-blue-600 rounded-full flex items-center justify-center mb-4">
+            <Mail className="h-8 w-8 text-white" />
           </div>
-        )}
-        {authError && !demoError && ( // Fallback for general auth errors
-          <div className="mt-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">{authError}</div>
-        )}
-        <p className="text-sm text-gray-500 mt-6">
-          Quick start: Use demo to explore sentiment analysis.
-        </p>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Welcome to R3almWeb</h2>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            Sign in to access your dashboard and tools.
+          </p>
+        </div>
+
+        {/* Login Form */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Email
+            </label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                placeholder="Enter your email"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Password
+            </label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                placeholder="Enter your password"
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {isLoading ? 'Signing In...' : 'Sign In'}
+          </button>
+        </form>
+
+        {/* About Link */}
+        <div className="text-center">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md p-2"
+            aria-label="Learn more about R3almWeb"
+          >
+            <User className="w-4 h-4" />
+            About R3almWeb
+          </Link>
+        </div>
+
+        {/* Footer */}
+        <div className="text-center text-xs text-gray-500 dark:text-gray-400">
+          <p>&copy; 2025 R3almWeb. All rights reserved.</p>
+        </div>
       </div>
     </div>
   );
