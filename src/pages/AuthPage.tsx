@@ -1,9 +1,13 @@
 // src/pages/AuthPage.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 const ADMIN_EMAIL = 'admin@bullshitdetector.com';
+
+function generateOTP(): string {
+  return Math.floor(10000000 + Math.random() * 90000000).toString();
+}
 
 export default function AuthPage() {
   const [email, setEmail] = useState('');
@@ -11,9 +15,22 @@ export default function AuthPage() {
   const [step, setStep] = useState<'email' | 'otp'>('email');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [currentOTP, setCurrentOTP] = useState('');
+  const [otpExpiry, setOtpExpiry] = useState<NodeJS.Timeout | null>(null);
 
-  const { login, generateOTP, isValidUser } = useAuth();
+  const { login, isValidUser } = useAuth();
   const navigate = useNavigate();
+
+  const generateNewOTP = () => {
+    const newOTP = generateOTP();
+    setCurrentOTP(newOTP);
+    // Simulate 30-second expiry: regenerate after timeout
+    if (otpExpiry) clearTimeout(otpExpiry);
+    setOtpExpiry(setTimeout(() => {
+      setError('OTP expired. Please generate a new one.');
+      setCurrentOTP('');
+    }, 30000));
+  };
 
   const handleEmailSubmit = () => {
     if (email !== ADMIN_EMAIL) {
@@ -22,22 +39,36 @@ export default function AuthPage() {
     }
     setStep('otp');
     setError('');
+    generateNewOTP(); // Generate OTP on entering OTP step
+  };
+
+  const handleRegenerateOTP = () => {
+    setError('');
+    generateNewOTP();
   };
 
   const handleOTPSubmit = async () => {
+    if (otp !== currentOTP) {
+      setError('Invalid OTP. Check the code above and try again.');
+      return;
+    }
     setLoading(true);
     setError('');
     try {
       await login(email, otp);
       navigate('/');
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const currentOTP = generateOTP();
+  useEffect(() => {
+    return () => {
+      if (otpExpiry) clearTimeout(otpExpiry);
+    };
+  }, [otpExpiry]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
@@ -63,8 +94,24 @@ export default function AuthPage() {
         ) : (
           <>
             <div className="mb-4">
-              <p className="text-sm text-gray-600 mb-2">Your 8-digit OTP: <strong>{currentOTP}</strong></p>
-              <p className="text-xs text-gray-500">This code expires in 30 seconds. Generate new if needed.</p>
+              <p className="text-sm text-gray-600 mb-2">Your 8-digit OTP: <strong>{currentOTP || 'Generate to see'}</strong></p>
+              <p className="text-xs text-gray-500">This code expires in 30 seconds.</p>
+              {!currentOTP && (
+                <button
+                  onClick={generateNewOTP}
+                  className="text-purple-600 hover:underline text-xs mt-1"
+                >
+                  Generate OTP
+                </button>
+              )}
+              {currentOTP && (
+                <button
+                  onClick={handleRegenerateOTP}
+                  className="text-purple-600 hover:underline text-xs mt-1"
+                >
+                  Regenerate
+                </button>
+              )}
             </div>
             <input
               type="text"
@@ -76,7 +123,7 @@ export default function AuthPage() {
             />
             <button
               onClick={handleOTPSubmit}
-              disabled={loading || otp.length < 8}
+              disabled={loading || otp.length < 8 || !currentOTP}
               className="w-full py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50 transition"
             >
               {loading ? 'Logging in...' : 'Login'}
