@@ -2,14 +2,21 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { Mail, Lock, Loader2, AlertCircle, CheckCircle, UserPlus } from 'lucide-react';
+import { Mail, Lock, Loader2, AlertCircle, CheckCircle, UserPlus, Eye, EyeOff } from 'lucide-react';
 
 const ADMIN_EMAIL = 'admin@bullshitdetector.com';
+
+interface PasswordStrength {
+  score: number;
+  label: string;
+  color: string;
+}
 
 export default function AuthPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [otp, setOtp] = useState('');
   const [mode, setMode] = useState<'login' | 'signup' | 'otp'>('login');
   const [loading, setLoading] = useState(false);
@@ -23,6 +30,27 @@ export default function AuthPage() {
       setEmail(ADMIN_EMAIL);
     }
   }, [mode]);
+
+  // Password strength calculation
+  const calculateStrength = (pwd: string): PasswordStrength => {
+    let score = 0;
+    if (!pwd) return { score: 0, label: '', color: '' };
+    if (pwd.length >= 8) score += 1;
+    if (/[a-z]/.test(pwd)) score += 1;
+    if (/[A-Z]/.test(pwd)) score += 1;
+    if (/[0-9]/.test(pwd)) score += 1;
+    if (/[^a-zA-Z0-9]/.test(pwd)) score += 1;
+
+    const labels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
+    const colors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-lime-500', 'bg-green-500'];
+    return {
+      score,
+      label: labels[score - 1] || labels[4],
+      color: colors[score - 1] || colors[4],
+    };
+  };
+
+  const strength = calculateStrength(password);
 
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,6 +117,11 @@ export default function AuthPage() {
 
     if (password.length < 6) {
       setError('Password must be at least 6 characters.');
+      return;
+    }
+
+    if (strength.score < 3) {
+      setError('Please choose a stronger password.');
       return;
     }
 
@@ -243,14 +276,57 @@ export default function AuthPage() {
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
                   id="signup-password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                  className="w-full pl-10 pr-12 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
                   placeholder="••••••••"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
               </div>
+
+              {/* Password Strength Indicator */}
+              {password && (
+                <div className="mt-2">
+                  <div className="flex gap-1 h-2">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <div
+                        key={i}
+                        className={`flex-1 rounded-full transition-colors ${
+                          i <= strength.score ? strength.color : 'bg-gray-200 dark:bg-gray-700'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <p className="mt-1 text-xs font-medium" style={{ color: strength.color.replace('bg-', '').replace('500', '') }}>
+                    {strength.label}
+                  </p>
+                  <ul className="mt-2 space-y-1 text-xs text-gray-500 dark:text-gray-400">
+                    <li className={password.length >= 8 ? 'text-green-600 dark:text-green-400' : ''}>
+                      • At least 8 characters
+                    </li>
+                    <li className={/[a-z]/.test(password) ? 'text-green-600 dark:text-green-400' : ''}>
+                      • One lowercase letter
+                    </li>
+                    <li className={/[A-Z]/.test(password) ? 'text-green-600 dark:text-green-400' : ''}>
+                      • One uppercase letter
+                    </li>
+                    <li className={/[0-9]/.test(password) ? 'text-green-600 dark:text-green-400' : ''}>
+                      • One number
+                    </li>
+                    <li className={/[^a-zA-Z0-9]/.test(password) ? 'text-green-600 dark:text-green-400' : ''}>
+                      • One special character
+                    </li>
+                  </ul>
+                </div>
+              )}
             </div>
 
             <div>
@@ -261,7 +337,7 @@ export default function AuthPage() {
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
                   id="confirm-password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
@@ -273,7 +349,7 @@ export default function AuthPage() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || strength.score < 3}
               className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-lg text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? (
