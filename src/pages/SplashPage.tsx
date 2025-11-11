@@ -1,24 +1,24 @@
-// src/pages/SplashPage.tsx
+// Full file: src/pages/SplashPage.tsx
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { Mail, Lock, User } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext'; // Assuming AuthContext provides login hook
+import { useAuth } from '../contexts/AuthContext';
 
 export default function SplashPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth(); // Hook for login; adjust if different
+  const [error, setError] = useState('');
+  const { signIn } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError('');
     try {
-      await login(email, password);
-      // Redirect handled by AuthContext or router
-    } catch (error) {
-      console.error('Login failed:', error);
-      // Add toast/error UI here if needed
+      await signIn(email, password);
+    } catch (err: any) {
+      setError(err.message || 'Login failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -37,6 +37,13 @@ export default function SplashPage() {
             Sign in to access your dashboard and tools.
           </p>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-4 rounded-lg">
+            <p className="text-sm text-red-800 dark:text-red-300">{error}</p>
+          </div>
+        )}
 
         {/* Login Form */}
         <form onSubmit={handleSubmit} className="space-y-6">

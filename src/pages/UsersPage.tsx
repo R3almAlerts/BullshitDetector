@@ -1,6 +1,6 @@
-// src/pages/UsersPage.tsx
+// Full file: src/pages/UsersPage.tsx
 import React, { useState, useEffect } from 'react';
-import { useProtected } from '../contexts/AuthContext';
+import { useAuth, useProtected } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { Edit, Trash2, Loader2 } from 'lucide-react';
 
@@ -14,7 +14,11 @@ interface Profile {
 }
 
 export default function UsersPage() {
-  useProtected(); // Throws if not admin
+  useProtected(); // Ensure logged in
+  const { isAdmin } = useAuth();
+  if (!isAdmin) {
+    return <div className="text-center py-8 text-red-600">Access denied. Admin only.</div>;
+  }
 
   const [users, setUsers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
