@@ -26,14 +26,11 @@ const ProfilePage = React.lazy(() => import('./pages/ProfilePage'));
 const UsersPage = React.lazy(() => import('./pages/UsersPage'));
 const AboutPage = React.lazy(() => import('./pages/AboutPage'));
 const AdminConfigPage = React.lazy(() => import('./pages/AdminConfigPage'));
+const SignupPage = React.lazy(() => import('./pages/SignupPage'));
 
 // Protected Route Wrapper (uses useProtected)
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { protected: isProtected, error } = useProtected();
-  if (!isProtected) {
-    if (error) toast.error(error);
-    return <Navigate to="/auth" replace />;
-  }
+  useProtected(); // Throws if not authenticated
   return <>{children}</>;
 };
 
@@ -51,9 +48,10 @@ function AppContent() {
     <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <ErrorBoundary>
         <Routes>
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/auth" element={<AuthPage />} />
           <Route element={<Layout />}>
             <Route index element={<AboutPage />} />
-            <Route path="/auth" element={<AuthPage />} /> {/* Auth outside Layout for no-nav */}
             <Route path="/analyzer" element={<ProtectedRoute><AnalyzerRoute /></ProtectedRoute>} />
             <Route path="/sentiment" element={<ProtectedRoute><SentimentPage /></ProtectedRoute>} />
             <Route path="/sentiment/:type" element={<ProtectedRoute><SentimentDetail /></ProtectedRoute>} />

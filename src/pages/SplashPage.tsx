@@ -1,7 +1,7 @@
 // Full file: src/pages/SplashPage.tsx
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
-import { Mail, Lock, User } from 'lucide-react';
+import { Mail, Lock } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function SplashPage() {
@@ -32,9 +32,9 @@ export default function SplashPage() {
           <div className="mx-auto h-16 w-16 bg-blue-600 rounded-full flex items-center justify-center mb-4">
             <Mail className="h-8 w-8 text-white" />
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Welcome to Validator</h2>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Welcome Back</h2>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-            Sign in to access your dashboard and tools.
+            Sign in to continue detecting bullshit.
           </p>
         </div>
 
@@ -92,21 +92,22 @@ export default function SplashPage() {
           </button>
         </form>
 
-        {/* About Link */}
+        {/* Signup Link */}
         <div className="text-center">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md p-2"
-            aria-label="Learn more about Validator"
-          >
-            <User className="w-4 h-4" />
-            About Validator
-          </Link>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Don't have an account?{' '}
+            <Link
+              to="/signup"
+              className="font-medium text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
+            >
+              Sign up
+            </Link>
+          </p>
         </div>
 
         {/* Footer */}
         <div className="text-center text-xs text-gray-500 dark:text-gray-400">
-          <p>&copy; 2025 Validator. All rights reserved.</p>
+          <p>&copy; 2025 Bullshit Detector. All rights reserved.</p>
         </div>
       </div>
     </div>
