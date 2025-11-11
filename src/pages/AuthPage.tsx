@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Mail, Lock, Loader2, AlertCircle, CheckCircle, UserPlus, Eye, EyeOff } from 'lucide-react';
 
-const ADMIN_EMAIL = 'admin@bullshitdetector.com';
+const ADMIN_EMAIL = 'admin@r3alm.com';  // <-- CHANGED
 
 interface PasswordStrength {
   score: number;
@@ -55,7 +55,7 @@ export default function AuthPage() {
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     if (email !== ADMIN_EMAIL) {
-      setError('Only admin@bullshitdetector.com can log in here.');
+      setError('Only admin@r3alm.com can log in here.');
       return;
     }
 
@@ -209,7 +209,7 @@ export default function AuthPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
-                  placeholder="admin@bullshitdetector.com"
+                  placeholder="admin@r3alm.com"
                 />
               </div>
               <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
@@ -435,7 +435,7 @@ export default function AuthPage() {
 
         {/* Footer */}
         <div className="mt-8 text-center text-xs text-gray-500 dark:text-gray-400">
-          <p>© 2025 Bullshit Detector. All rights reserved.</p>
+          <p>© 2025 R3ALM. All rights reserved.</p>
         </div>
       </div>
     </div>
