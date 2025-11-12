@@ -2,9 +2,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
+import { sendEmail, templates } from '../lib/email';
 import { Mail, Lock, Loader2, AlertCircle, CheckCircle, UserPlus, Eye, EyeOff } from 'lucide-react';
 
-const ADMIN_EMAIL = 'admin@r3alm.com';  // <-- CHANGED
+const ADMIN_EMAIL = 'admin@r3alm.com';
 
 interface PasswordStrength {
   score: number;
@@ -24,14 +25,12 @@ export default function AuthPage() {
   const [info, setInfo] = useState('');
   const navigate = useNavigate();
 
-  // Auto-fill admin email for login
   useEffect(() => {
     if (mode === 'login') {
       setEmail(ADMIN_EMAIL);
     }
   }, [mode]);
 
-  // Password strength calculation
   const calculateStrength = (pwd: string): PasswordStrength => {
     let score = 0;
     if (!pwd) return { score: 0, label: '', color: '' };
@@ -64,7 +63,7 @@ export default function AuthPage() {
     setInfo('');
 
     try {
-      const { error } = await supabase.auth.signInWithOtp({
+      const { data, error } = await supabase.auth.signInWithOtp({
         email,
         options: {
           emailRedirectTo: `${window.location.origin}/auth`,
@@ -72,6 +71,13 @@ export default function AuthPage() {
       });
 
       if (error) throw error;
+
+      // Send custom OTP email
+      const code = data?.user?.email_otp || '123456'; // Fallback for dev
+      await sendEmail({
+        to: email,
+        ...templates.emailOtp(code),
+      });
 
       setMode('otp');
       setInfo('Check your email for the 6-digit OTP. It expires in 5 minutes.');
@@ -127,7 +133,7 @@ export default function AuthPage() {
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -137,7 +143,14 @@ export default function AuthPage() {
 
       if (error) throw error;
 
-      setInfo('Check your email to confirm your account. You’ll be redirected after verification.');
+      // Send custom confirmation email
+      const token = data.user?.confirmation_token || 'test-token';
+      await sendEmail({
+        to: email,
+        ...templates.signupConfirmation(`${window.location.origin}/auth`, token),
+      });
+
+      setInfo('Check your email to confirm your account.');
       setMode('login');
       setPassword('');
       setConfirmPassword('');
@@ -177,7 +190,6 @@ export default function AuthPage() {
           </p>
         </div>
 
-        {/* Info Message */}
         {info && (
           <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg flex items-start gap-2">
             <CheckCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
@@ -185,7 +197,6 @@ export default function AuthPage() {
           </div>
         )}
 
-        {/* Error Message */}
         {error && (
           <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-2">
             <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
@@ -193,7 +204,6 @@ export default function AuthPage() {
           </div>
         )}
 
-        {/* Login Mode */}
         {mode === 'login' && (
           <form onSubmit={handleSendOTP} className="space-y-6">
             <div>
@@ -213,7 +223,7 @@ export default function AuthPage() {
                 />
               </div>
               <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                Only <strong>{ADMIN_EMAIL}</strong> is authorized for OTP login.
+                Only <strong>{ADMIN_EMAIL}</strong> is authorized.
               </p>
             </div>
 
@@ -247,7 +257,6 @@ export default function AuthPage() {
           </form>
         )}
 
-        {/* Signup Mode */}
         {mode === 'signup' && (
           <form onSubmit={handleSignup} className="space-y-6">
             <div>
@@ -292,7 +301,6 @@ export default function AuthPage() {
                 </button>
               </div>
 
-              {/* Password Strength Indicator */}
               {password && (
                 <div className="mt-2">
                   <div className="flex gap-1 h-2">
@@ -377,7 +385,6 @@ export default function AuthPage() {
           </form>
         )}
 
-        {/* OTP Mode */}
         {mode === 'otp' && (
           <form onSubmit={handleVerifyOTP} className="space-y-6">
             <div>
@@ -433,7 +440,6 @@ export default function AuthPage() {
           </form>
         )}
 
-        {/* Footer */}
         <div className="mt-8 text-center text-xs text-gray-500 dark:text-gray-400">
           <p>© 2025 R3ALM. All rights reserved.</p>
         </div>
