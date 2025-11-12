@@ -1,49 +1,56 @@
-// Full file: api/email.ts
-import express from 'express';
-import nodemailer from 'nodemailer';
-import cors from 'cors';
-import { z } from 'zod';
+// Full file: src/lib/email.ts
+export interface SendEmailOptions {
+  to: string;
+  subject: string;
+  html: string;
+  text?: string;
+}
 
-const app = express();
-app.use(cors({ origin: process.env.CLIENT_URL ?? 'http://localhost:5173' }));
-app.use(express.json());
+export const sendEmail = async (options: SendEmailOptions): Promise<void> => {
+  const response = await fetch('/api/email/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(options),
+  });
 
-const SMTP_CONFIG = {
-  host: 'smtp.r3alm.com',
-  port: 465,
-  secure: true,
-  auth: {
-    user: 'no-reply@r3alm.com',
-    pass: 'Z3us!@#$1r3alm',
-  },
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || 'Failed to send email');
+  }
 };
 
-const transporter = nodemailer.createTransporter(SMTP_CONFIG);
+export const templates = {
+  signupConfirmation: (redirectUrl: string, token: string) => ({
+    subject: 'Confirm Your Bullshit Detector Account',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2>Welcome to Bullshit Detector!</h2>
+        <p>Click the button below to confirm your email and activate your account:</p>
+        <a href="${redirectUrl}?token=${token}" 
+           style="display: inline-block; background: #7c3aed; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold;">
+          Confirm Email
+        </a>
+        <p style="margin-top: 20px; font-size: 12px; color: #666;">
+          If you didn't create an account, ignore this email.
+        </p>
+      </div>
+    `,
+  }),
 
-const EmailSchema = z.object({
-  to: z.string().email(),
-  subject: z.string(),
-  html: z.string(),
-  text: z.string().optional(),
-});
-
-app.post('/send', async (req, res) => {
-  try {
-    const { to, subject, html, text } = EmailSchema.parse(req.body);
-
-    await transporter.sendMail({
-      from: `"Bullshit Detector" <no-reply@r3alm.com>`,
-      to,
-      subject,
-      html,
-      text: text ?? html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(),
-    });
-
-    res.json({ success: true });
-  } catch (err) {
-    console.error('Email error:', err);
-    res.status(500).json({ error: (err as Error).message });
-  }
-});
-
-export default app;
+  emailOtp: (code: string) => ({
+    subject: 'Your Bullshit Detector Login Code',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2>Your One-Time Code</h2>
+        <p>Use this code to log in:</p>
+        <div style="font-size: 32px; font-weight: bold; letter-spacing: 8px; text-align: center; margin: 20px 0; color: #7c3aed;">
+          ${code}
+        </div>
+        <p>This code expires in 5 minutes.</p>
+        <p style="font-size: 12px; color: #666;">
+          If you didn't request this, ignore this email.
+        </p>
+      </div>
+    `,
+  }),
+};
