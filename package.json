@@ -38,4 +38,20 @@
     "typescript": "^5.6.3",
     "vite": "^7.2.2"
   }
+{
+  "scripts": {
+    "dev:client": "vite",
+    "dev:server": "ts-node-dev --respawn api/index.ts",
+    "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\""
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "nodemailer": "^6.9.14",
+    "cors": "^2.8.5",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "ts-node-dev": "^2.0.0",
+    "concurrently": "^8.2.2"
+  }
 }
