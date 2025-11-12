@@ -1,10 +1,7 @@
-// api/index.ts
-import app from './email';
+// Full file: api/index.ts
+import app from './email.js';
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
-
-export default app;
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`Email API server running on port ${port}`);
+});

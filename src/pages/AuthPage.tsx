@@ -1,16 +1,17 @@
-// src/pages/AuthPage.tsx
+// Full file: src/pages/AuthPage.tsx
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { sendEmail, templates } from '../lib/email';
-import {
-  Mail, Lock, Loader2, AlertCircle, CheckCircle,
-  UserPlus, Eye, EyeOff,
-} from 'lucide-react';
+import { Mail, Lock, Loader2, AlertCircle, CheckCircle, UserPlus, Eye, EyeOff } from 'lucide-react';
 
 const ADMIN_EMAIL = 'admin@r3alm.com';
 
-interface PasswordStrength { score: number; label: string; color: string; }
+interface PasswordStrength {
+  score: number;
+  label: string;
+  color: string;
+}
 
 export default function AuthPage() {
   const [email, setEmail] = useState('');
@@ -54,16 +55,12 @@ export default function AuthPage() {
       });
       if (error) throw error;
 
-      // Supabase does NOT expose the OTP in the response for security.
-      // In production you must rely on the email Supabase sends, OR
-      // generate your own OTP and store it temporarily (advanced).
-      // For demo we hard-code a fallback.
+      // For demo, use a fixed OTP since Supabase doesn't expose it client-side
       const code = '123456';
-
       await sendEmail({ to: email, ...templates.emailOtp(code) });
 
       setMode('otp');
-      setInfo('Check your email for the 6-digit OTP (demo code: 123456).');
+      setInfo('Check your email for the 6-digit OTP (demo: 123456).');
     } catch (err: any) {
       setError(err.message ?? 'Failed to send OTP.');
     } finally {
@@ -106,8 +103,7 @@ export default function AuthPage() {
       });
       if (error) throw error;
 
-      // Supabase does not expose the confirmation token in the client response.
-      // For demo we send a fake token; in production you would rely on Supabase email.
+      // For demo, use a fake token since Supabase doesn't expose it client-side
       const fakeToken = 'demo-token';
       await sendEmail({
         to: email,
@@ -129,13 +125,9 @@ export default function AuthPage() {
     setError(''); setInfo(''); setPassword(''); setConfirmPassword(''); setOtp('');
   };
 
-  /* ------------------------------------------------------------------ */
-  /* UI (unchanged except for the sendEmail calls above)               */
-  /* ------------------------------------------------------------------ */
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-100 dark:from-gray-900 dark:to-gray-800 px-4 py-8">
       <div className="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-xl w-full max-w-md">
-        {/* header */}
         <div className="text-center mb-8">
           <div className="mx-auto h-16 w-16 bg-purple-600 rounded-full flex items-center justify-center mb-4">
             {mode === 'signup' ? <UserPlus className="h-8 w-8 text-white" /> : <Lock className="h-8 w-8 text-white" />}
@@ -162,7 +154,6 @@ export default function AuthPage() {
           </div>
         )}
 
-        {/* ==================== LOGIN ==================== */}
         {mode === 'login' && (
           <form onSubmit={handleSendOTP} className="space-y-6">
             <div>
@@ -213,7 +204,6 @@ export default function AuthPage() {
           </form>
         )}
 
-        {/* ==================== SIGNUP ==================== */}
         {mode === 'signup' && (
           <form onSubmit={handleSignup} className="space-y-6">
             <div>
@@ -324,7 +314,6 @@ export default function AuthPage() {
           </form>
         )}
 
-        {/* ==================== OTP ==================== */}
         {mode === 'otp' && (
           <form onSubmit={handleVerifyOTP} className="space-y-6">
             <div>
