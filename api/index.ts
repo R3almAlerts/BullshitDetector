@@ -1,7 +1,11 @@
-// Full file: api/index.ts
-import app from './email.js';
+// api/index.ts
+import express from 'express';
+import emailRouter from './email.js';
+import cors from 'cors';
 
-const port = process.env.PORT || 3000;
-app.listen(port, () => {
-  console.log(`Email API server running on port ${port}`);
-});
+const app = express();
+app.use(cors({ origin: process.env.CLIENT_URL ?? 'http://localhost:5173' }));
+app.use('/api/email', emailRouter);
+
+const PORT = process.env.PORT ?? 3000;
+app.listen(PORT, () => console.log(`Email API listening on ${PORT}`));
