@@ -11,7 +11,7 @@ import Layout from './components/layout/Layout';
 import { OnboardingModal } from './components/OnboardingModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
-// Lazy-loaded pages
+// Lazy pages
 const HomePage = React.lazy(() => import('./pages/HomePage'));
 const Validator = React.lazy(() => import('./pages/Validator'));
 const SentimentPage = React.lazy(() => import('./pages/SentimentPage'));
@@ -20,22 +20,32 @@ const HistoryPage = React.lazy(() => import('./pages/HistoryPage'));
 const SettingsPage = React.lazy(() => import('./pages/SettingsPage'));
 const AuthPage = React.lazy(() => import('./pages/AuthPage'));
 const ProfilePage = React.lazy(() => import('./pages/ProfilePage'));
-const UsersPage = React.lazy(() => import('./pages/UsersPage'));
-const AboutPage = React.lazy(() => import('./pages/AboutPage'));
 const AdminConfigPage = React.lazy(() => import('./pages/AdminConfigPage'));
 const SignupPage = React.lazy(() => import('./pages/SignupPage'));
+const AboutPage = React.lazy(() => import('./pages/AboutPage'));
 
-// Protected Route
+// Safe Protected Route — NO THROWING
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
-  if (loading) return <div className="flex min-h-screen items-center justify-center">Loading...</div>;
-  if (!user) return <Navigate to="/auth" replace />;
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-xl">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
   return <>{children}</>;
 };
 
-// THIS MUST BE INSIDE THE PROVIDER TREE
+// Safe Analyzer Route — uses context safely
 const AnalyzerRoute = () => {
-  const { mode } = useUserMode(); // Now safe — inside UserModeProvider
+  const { mode = 'voter' } = useUserMode(); // default fallback
   return mode === 'professional' ? <Validator /> : <HomePage />;
 };
 
@@ -47,7 +57,7 @@ function AppContent() {
     <BrowserRouter>
       <ErrorBoundary>
         <Routes>
-          {/* Public */}
+          {/* Public Routes */}
           <Route
             path="/auth"
             element={
@@ -65,6 +75,7 @@ function AppContent() {
             }
           />
 
+          {/* Protected App */}
           <Route element={<Layout />}>
             <Route
               index
@@ -79,7 +90,7 @@ function AppContent() {
               path="/analyzer"
               element={
                 <ProtectedRoute>
-                  <Suspense fallback={<div className="p-8 text-center">Loading Analyzer...</div>}>
+                  <Suspense fallback={<div className="p-12 text-center">Loading Analyzer...</div>}>
                     <AnalyzerRoute />
                   </Suspense>
                 </ProtectedRoute>
@@ -90,7 +101,7 @@ function AppContent() {
               path="/sentiment"
               element={
                 <ProtectedRoute>
-                  <Suspense fallback={<div className="p-8">Loading...</div>}>
+                  <Suspense fallback={<div className="p-12 text-center">Loading...</div>}>
                     <SentimentPage />
                   </Suspense>
                 </ProtectedRoute>
@@ -101,7 +112,7 @@ function AppContent() {
               path="/sentiment/:type"
               element={
                 <ProtectedRoute>
-                  <Suspense fallback={<div className="p-8">Loading...</div>}>
+                  <Suspense fallback={<div className="p-12 text-center">Loading...</div>}>
                     <SentimentDetail />
                   </Suspense>
                 </ProtectedRoute>
@@ -112,19 +123,8 @@ function AppContent() {
               path="/history"
               element={
                 <ProtectedRoute>
-                  <Suspense fallback={<div className="p-8">Loading History...</div>}>
+                  <Suspense fallback={<div className="p-12 text-center">Loading History...</div>}>
                     <HistoryPage />
-                  </Suspense>
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/settings"
-              element={
-                <ProtectedRoute>
-                  <Suspense fallback={<div className="p-8">Loading...</div>}>
-                    <SettingsPage />
                   </Suspense>
                 </ProtectedRoute>
               }
@@ -134,7 +134,7 @@ function AppContent() {
               path="/profile"
               element={
                 <ProtectedRoute>
-                  <Suspense fallback={<div className="p-8">Loading Profile...</div>}>
+                  <Suspense fallback={<div className="p-12 text-center">Loading Profile...</div>}>
                     <ProfilePage />
                   </Suspense>
                 </ProtectedRoute>
@@ -143,23 +143,10 @@ function AppContent() {
 
             {isAdmin && (
               <Route
-                path="/users"
-                element={
-                  <ProtectedRoute>
-                    <Suspense fallback={<div className="p-8">Loading...</div>}>
-                      <UsersPage />
-                    </Suspense>
-                  </ProtectedRoute>
-                }
-              />
-            )}
-
-            {isAdmin && (
-              <Route
                 path="/admin/config"
                 element={
                   <ProtectedRoute>
-                    <Suspense fallback={<div className="p-8">Loading Config...</div>}>
+                    <Suspense fallback={<div className="p-12 text-center">Loading...</div>}>
                       <AdminConfigPage />
                     </Suspense>
                   </ProtectedRoute>
@@ -187,12 +174,12 @@ export default function App() {
       <UserModeProvider>
         <AuthProvider>
           <ModelProvider>
-  <AppProvider>
-            <AppContent />
-          </AppProvider>
-        </ModelProvider>
-      </AuthProvider>
-    </UserModeProvider>
-  </ThemeProvider>
+            <AppProvider>
+              <AppContent />
+            </AppProvider>
+          </ModelProvider>
+        </AuthProvider>
+      </UserModeProvider>
+    </ThemeProvider>
   );
 }
