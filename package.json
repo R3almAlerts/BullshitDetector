@@ -1,7 +1,8 @@
-{
-  "scripts": {
-    "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
-    "dev:client": "vite",
-    "dev:server": "ts-node-dev --esm --respawn api/index.ts"
-  }
+// package.json → scripts
+"scripts": {
+  "dev": "vite",
+  "build": "tsc && vite build",
+  "preview": "vite preview",
+  "lint": "eslint . --ext .ts,.tsx",
+  "format": "prettier --write ."
 }
