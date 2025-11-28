@@ -11,7 +11,7 @@ import Layout from './components/layout/Layout';
 import { OnboardingModal } from './components/OnboardingModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
-// Lazy pages
+// Lazy-loaded pages — ALL must be default exports in their files!
 const HomePage = React.lazy(() => import('./pages/HomePage'));
 const Validator = React.lazy(() => import('./pages/Validator'));
 const SentimentPage = React.lazy(() => import('./pages/SentimentPage'));
@@ -24,162 +24,167 @@ const AdminConfigPage = React.lazy(() => import('./pages/AdminConfigPage'));
 const SignupPage = React.lazy(() => import('./pages/SignupPage'));
 const AboutPage = React.lazy(() => import('./pages/AboutPage'));
 
-// Safe Protected Route — NO THROWING
+// Safe loading fallback component
+const LoadingFallback = () => (
+  <div className="flex min-h-screen items-center justify-center">
+    <div className="text-xl font-medium text-gray-600 dark:text-gray-400">Loading...</div>
+  </div>
+);
+
+// Protected route — never throws
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
 
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-xl">Loading...</div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
+  if (loading) return <LoadingFallback />;
+  if (!user) return <Navigate to="/auth" replace />;
 
   return <>{children}</>;
 };
 
-// Safe Analyzer Route — uses context safely
+// Analyzer route — safely reads context
 const AnalyzerRoute = () => {
-  const { mode = 'voter' } = useUserMode(); // default fallback
+  const { mode = 'voter' } = useUserMode();
   return mode === 'professional' ? <Validator /> : <HomePage />;
 };
 
-function AppContent() {
+// Main app content (inside all providers)
+const AppContent = () => {
   const { showOnboarding, setShowOnboarding } = useApp();
   const { isAdmin } = useAuth();
 
   return (
-    <BrowserRouter>
-      <ErrorBoundary>
-        <Routes>
-          {/* Public Routes */}
+    <>
+      <Routes>
+        {/* Public */}
+        <Route
+          path="/auth"
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <AuthPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/signup"
+          element={
+            <Suspense fallback={<LoadingFallback />}>
+              <SignupPage />
+            </Suspense>
+          }
+        />
+
+        {/* Protected app with Layout */}
+        <Route element={<Layout />}>
           <Route
-            path="/auth"
+            index
             element={
-              <Suspense fallback={<div className="flex min-h-screen items-center justify-center">Loading...</div>}>
-                <AuthPage />
-              </Suspense>
-            }
-          />
-          <Route
-            path="/signup"
-            element={
-              <Suspense fallback={<div className="flex min-h-screen items-center justify-center">Loading...</div>}>
-                <SignupPage />
+              <Suspense fallback={<LoadingFallback />}>
+                <AboutPage />
               </Suspense>
             }
           />
 
-          {/* Protected App */}
-          <Route element={<Layout />}>
-            <Route
-              index
-              element={
-                <Suspense fallback={<div className="flex min-h-screen items-center justify-center">Loading...</div>}>
-                  <AboutPage />
+          <Route
+            path="/analyzer"
+            element={
+              <ProtectedRoute>
+                <Suspense fallback={<LoadingFallback />}>
+                  <AnalyzerRoute />
                 </Suspense>
-              }
-            />
+              </ProtectedRoute>
+            }
+          />
 
+          <Route
+            path="/sentiment"
+            element={
+              <ProtectedRoute>
+                <Suspense fallback={<LoadingFallback />}>
+                  <SentimentPage />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/sentiment/:type"
+            element={
+              <ProtectedRoute>
+                <Suspense fallback={<LoadingFallback />}>
+                  <SentimentDetail />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/history"
+            element={
+              <ProtectedRoute>
+                <Suspense fallback={<LoadingFallback />}>
+                  <HistoryPage />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Suspense fallback={<LoadingFallback />}>
+                  <ProfilePage />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+
+          {isAdmin && (
             <Route
-              path="/analyzer"
+              path="/admin/config"
               element={
                 <ProtectedRoute>
-                  <Suspense fallback={<div className="p-12 text-center">Loading Analyzer...</div>}>
-                    <AnalyzerRoute />
+                  <Suspense fallback={<LoadingFallback />}>
+                    <AdminConfigPage />
                   </Suspense>
                 </ProtectedRoute>
               }
             />
+          )}
 
-            <Route
-              path="/sentiment"
-              element={
-                <ProtectedRoute>
-                  <Suspense fallback={<div className="p-12 text-center">Loading...</div>}>
-                    <SentimentPage />
-                  </Suspense>
-                </ProtectedRoute>
-              }
-            />
+          {/* Catch-all */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
+      </Routes>
 
-            <Route
-              path="/sentiment/:type"
-              element={
-                <ProtectedRoute>
-                  <Suspense fallback={<div className="p-12 text-center">Loading...</div>}>
-                    <SentimentDetail />
-                  </Suspense>
-                </ProtectedRoute>
-              }
-            />
+      {/* Onboarding modal — outside Routes so it can overlay everything */}
+      <Suspense fallback={null}>
+        <OnboardingModal isOpen={showOnboarding} onClose={() => setShowOnboarding(false)} />
+      </Suspense>
 
-            <Route
-              path="/history"
-              element={
-                <ProtectedRoute>
-                  <Suspense fallback={<div className="p-12 text-center">Loading History...</div>}>
-                    <HistoryPage />
-                  </Suspense>
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <Suspense fallback={<div className="p-12 text-center">Loading Profile...</div>}>
-                    <ProfilePage />
-                  </Suspense>
-                </ProtectedRoute>
-              }
-            />
-
-            {isAdmin && (
-              <Route
-                path="/admin/config"
-                element={
-                  <ProtectedRoute>
-                    <Suspense fallback={<div className="p-12 text-center">Loading...</div>}>
-                      <AdminConfigPage />
-                    </Suspense>
-                  </ProtectedRoute>
-                }
-              />
-            )}
-
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Route>
-        </Routes>
-
-        <Suspense fallback={null}>
-          <OnboardingModal isOpen={showOnboarding} onClose={() => setShowOnboarding(false)} />
-        </Suspense>
-
-        <Toaster position="top-right" />
-      </ErrorBoundary>
-    </BrowserRouter>
+      <Toaster position="top-right" />
+    </>
   );
-}
+};
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <UserModeProvider>
-        <AuthProvider>
-          <ModelProvider>
-            <AppProvider>
-              <AppContent />
-            </AppProvider>
-          </ModelProvider>
-        </AuthProvider>
-      </UserModeProvider>
-    </ThemeProvider>
+    <React.StrictMode>
+      <ThemeProvider>
+        <UserModeProvider>
+          <AuthProvider>
+            <ModelProvider>
+              <AppProvider>
+                <BrowserRouter>
+                  <ErrorBoundary>
+                    <AppContent />
+                  </ErrorBoundary>
+                </BrowserRouter>
+              </AppProvider>
+            </ModelProvider>
+          </AuthProvider>
+        </UserModeProvider>
+      </ThemeProvider>
+    </React.StrictMode>
   );
 }
